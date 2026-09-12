@@ -1,0 +1,44 @@
+# hris-workspace .gitignore
+#
+# This repo tracks the workspace shell only: the .claude/ configuration,
+# docs/, test-scenarios/, and test-results/ structure. The actual
+# application repositories placed inside frontend-repo/ and backend-repo/
+# are separate git repositories and must never be tracked by this one —
+# each keeps its own history, remote, and .gitignore.
+
+# --- Application repositories: ignore everything except the placeholder ---
+/frontend-repo/*
+!/frontend-repo/.gitkeep
+/backend-repo/*
+!/backend-repo/.gitkeep
+
+# --- Test results are ephemeral, environment-specific output ---
+/test-results/*
+!/test-results/.gitkeep
+
+# --- Secrets and environment files (defense in depth — never commit these,
+#     in this repo or anything placed inside it) ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*credentials*
+*secret*
+*.sqlite
+*.sql
+*.dump
+
+# --- OS / editor noise ---
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# --- Common dependency/build output, in case a repo is ever copied in
+#     flat instead of cloned as its own repo ---
+node_modules/
+vendor/
+dist/
+build/
