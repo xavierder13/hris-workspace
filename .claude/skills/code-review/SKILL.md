@@ -51,6 +51,19 @@ not every review needs every category:
 - **Frontend state management**: does a new piece of state duplicate
   something already tracked elsewhere? Does it follow the repository's
   existing store/hook conventions?
+- **UI-library API currency**: a prop/API used from memory can be stale —
+  training data skews toward older major versions of a UI library, and a
+  newer one (or one released/updated after the knowledge cutoff) can have
+  renamed or deprecated the exact prop being used, producing a runtime
+  console warning that won't surface as a build error and won't be visible
+  without a browser (confirmed case: AntD `Divider`'s `orientation` prop
+  was renamed to `titlePlacement` in a version newer than commonly
+  recalled). Before relying on a specific prop name/shape for a UI
+  library, check the installed version's own source or type defs
+  (`node_modules/<package>/**/*.d.ts`, or the runtime source itself) when
+  the prop touches placement, sizing, or anything that existed in an
+  older major version of that library — don't assume recalled API shape
+  is current.
 - **Duplication**: real, harmful duplication (the same business rule
   encoded twice, likely to drift) vs. superficial similarity that doesn't
   need a shared abstraction. Don't flag the second kind.
