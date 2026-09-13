@@ -28,7 +28,13 @@ format. Then:
    the change could affect, and include that in your report even though you
    won't execute the checklist yourself (that's `integration-tester` or
    `user-workflow-tester`'s job — name it as follow-up work).
-5. `test-evidence` — use the same severity scale for review findings as for
+5. If the security angle is the actual point of the request (not just one
+   category among several), prefer delegating to the `security-reviewer`
+   agent instead of trying to go deep on it here — it applies the fuller
+   `security-review` skill (access control, injection, secrets, auth/token
+   handling, file uploads, mass assignment, dependency/CVE reachability)
+   rather than the lighter security pass folded into `code-review`.
+6. `test-evidence` — use the same severity scale for review findings as for
    test findings, so everything is comparable. Don't bury the one finding
    that matters under a pile of style comments; lead with the highest
    severity.

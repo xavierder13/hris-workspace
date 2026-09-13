@@ -78,12 +78,14 @@ working inside a specific repository:
 
 - **Skills** (`.claude/skills/`) are reusable procedures: how to discover
   repositories, how to compare a frontend/backend contract, how to test a
-  business workflow, how to review code, how to scope a regression check, how
-  to write up evidence. Load the one that matches the task.
+  business workflow, how to review code, how to do a focused security
+  review, how to scope a regression check, how to write up evidence. Load
+  the one that matches the task.
 - **Agents** (`.claude/agents/`) are the reusable executors: an
   integration-tester, a user-workflow-tester, a code-reviewer, a
-  regression-tester. Each one is built from the skills above, scoped to a
-  specific job, and reports in the standard format below. Use an agent when a
+  security-reviewer, a regression-tester. Each one is built from the
+  skills above, scoped to a specific job, and reports in the standard
+  format below. Use an agent when a
   task is substantial enough to be worth delegating (a full feature test, a
   full review) — for a quick, narrow question, just use the relevant skill
   directly instead of spawning an agent.
