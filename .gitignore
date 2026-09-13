@@ -12,6 +12,11 @@
 /backend-repo/*
 !/backend-repo/.gitkeep
 
+# --- This instance's actual repos (placed here instead of frontend-repo/
+#     backend-repo/): each keeps its own separate git history/remote ---
+/vueportal/
+/reactjs-ant-design/
+
 # --- Test results are ephemeral, environment-specific output ---
 /test-results/*
 !/test-results/.gitkeep
