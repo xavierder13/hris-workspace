@@ -67,6 +67,17 @@ to consider, not a script to follow blindly:
     different, and that gap is exactly the kind of defect this skill exists
     to catch. Use the least invasive method (see the workspace `CLAUDE.md`'s
     database safety rules).
+15. If the feature generates a sequential or otherwise derived-from-existing-
+    rows business identifier (an invoice/request/ticket number, a running
+    count, anything computed from "how many rows exist" rather than stored
+    independently), don't only create records in an unbroken sequence and
+    call it tested — delete a record that ISN'T the most-recently-created
+    one, then create a new one, and confirm the new identifier doesn't
+    collide with a surviving row. A count-based (or otherwise non-derived-
+    from-the-actual-max) generator can look fine under isolated creates and
+    still break permanently — not just under concurrency — the first time
+    real delete-then-create usage happens. This exact class of bug has been
+    caught for real in this workspace; don't skip it as "unlikely."
 
 ## Browser testing vs. API-only testing
 
