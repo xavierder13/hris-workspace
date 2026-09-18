@@ -23,12 +23,15 @@ hris-workspace/
 ├── .gitignore
 ├── .claude/
 │   ├── agents/              # integration-tester, user-workflow-tester,
-│   │                        # code-reviewer, regression-tester
+│   │                        # code-reviewer, security-reviewer,
+│   │                        # regression-tester
 │   ├── skills/              # repository-discovery, cross-repository-review,
 │   │                        # user-workflow-testing, code-review,
-│   │                        # regression-testing, test-evidence
+│   │                        # security-review, regression-testing,
+│   │                        # feature-development, test-evidence
 │   └── commands/            # /review-system /test-feature /test-workflow
-│                            # /cross-check-api /review-code /regression-test
+│                            # /cross-check-api /review-code /security-review
+│                            # /regression-test /add-feature
 ├── test-scenarios/
 │   ├── templates/           # generic scenario template — reusable for any module
 │   └── scenarios/           # actual scenarios written for this project
@@ -90,12 +93,18 @@ keeps working unchanged.
    - `/test-workflow <workflow description>` — act as an end user and run
      a complete business process.
    - `/review-code <target>` — targeted code review.
+   - `/security-review <target>` — focused security review.
    - `/regression-test <change>` — scope what a change could affect.
+   - `/add-feature <feature/module + description>` — scope and build a new
+     feature in whichever repository owns it, reusing existing conventions.
+     Unlike the commands above, this one modifies code by design — see
+     `CLAUDE.md`'s "When code changes are allowed vs. report-only."
 
 ## Ground rules (see `CLAUDE.md` for the full version)
 
 - This workspace **reports findings by default**; it doesn't fix things
-  unless you ask it to.
+  unless you ask it to. (`/add-feature` is the one exception — building a
+  new feature is inherently a code change, not a report.)
 - It **never copies** a repository's project-specific rules into this
   workspace's generic config, or vice versa — read the architecture note in
   `docs/architecture.md` if you're curious why that separation matters.

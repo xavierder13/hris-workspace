@@ -60,13 +60,16 @@ CLAUDE.md (root)          -- the rules everything else operates under
   │     cross-repository-review
   │     user-workflow-testing
   │     code-review
+  │     security-review
   │     regression-testing
+  │     feature-development  (the one build-not-report skill, see below)
   │     test-evidence        (shared reporting structure, used by all)
   │
   ├── .claude/agents/       -- the reusable "who" (scoped executors,
   │     integration-tester    built from the skills above)
   │     user-workflow-tester
   │     code-reviewer
+  │     security-reviewer
   │     regression-tester
   │
   └── .claude/commands/     -- the reusable "entry points"
@@ -76,8 +79,17 @@ CLAUDE.md (root)          -- the rules everything else operates under
         /test-workflow   -> user-workflow-tester agent
         /cross-check-api -> cross-repository-review (direct, feature-scoped)
         /review-code     -> code-reviewer agent
+        /security-review -> security-reviewer agent
         /regression-test -> regression-tester agent
+        /add-feature     -> feature-development (direct, build-scoped)
 ```
+
+`/add-feature` is intentionally not wrapped in an agent, the way
+`/review-system` and `/cross-check-api` aren't: every existing agent in this
+workspace is deliberately read-only (`Read, Grep, Glob, Bash` — no `Edit`/
+`Write`), because everything else here defaults to report-only. Feature
+development is the one build task this workspace performs, so it runs
+directly rather than through a report-only agent.
 
 `test-evidence` is intentionally used by every other skill and every agent,
 rather than each one defining its own report shape — this is what makes
@@ -97,6 +109,12 @@ Adding a new generic capability: add a skill under `.claude/skills/`, and
 either wire it into an existing agent/command or add a new one, following
 the same "reusable procedure, not project-specific content" rule as
 everything else here.
+
+Adding a new feature/module to one of the actual application repositories
+(as opposed to a new capability for this workspace itself) is what
+`/add-feature` and the `feature-development` skill are for — see the root
+`CLAUDE.md`'s "When code changes are allowed vs. report-only" for how this
+differs from the report-only commands above.
 
 Adding project-specific capability: it goes inside the relevant
 repository's own `.claude/`, never here — even if it would be convenient to

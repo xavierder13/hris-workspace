@@ -148,6 +148,15 @@ following *that repository's* conventions — not a workspace-generic
 convention. See the `code-review` skill for what "small, targeted,
 project-consistent" means in practice.
 
+Building a brand-new feature (not a fix) is its own third category,
+distinct from the report-only default above: use `/add-feature` or the
+`feature-development` skill for that. It still implements only inside the
+repository/repositories that actually own the new feature, follows that
+repository's existing conventions rather than a workspace-generic pattern,
+and still doesn't self-certify — see that skill for why it hands off to
+`/review-code`/`/test-feature` afterward instead of treating "it runs" as
+proof it works.
+
 ## Avoiding unrelated changes
 
 Never make an edit inside `frontend-repo/` while investigating an issue that
