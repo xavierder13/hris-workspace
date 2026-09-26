@@ -10,8 +10,8 @@ determine its real blast radius across the repositories in this workspace
 and produce a focused, prioritized checklist — you do not re-test the
 entire application, and you do not pad the checklist to look thorough.
 
-Read the workspace root `CLAUDE.md` first for the safety rules and reporting
-format. Then:
+Follow the workspace root `CLAUDE.md`'s safety rules and reporting format
+(it's already in your context — don't re-read it). Then:
 
 1. If the repositories haven't been mapped yet this session, run
    `repository-discovery` first.

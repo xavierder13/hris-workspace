@@ -30,7 +30,7 @@ hris-workspace/
 │   │                        # security-review, regression-testing,
 │   │                        # feature-development, test-evidence
 │   └── commands/            # /review-system /test-feature /test-workflow
-│                            # /cross-check-api /review-code /security-review
+│                            # /cross-check-api /review-code /review-security
 │                            # /regression-test /add-feature
 ├── test-scenarios/
 │   ├── templates/           # generic scenario template — reusable for any module
@@ -93,7 +93,7 @@ keeps working unchanged.
    - `/test-workflow <workflow description>` — act as an end user and run
      a complete business process.
    - `/review-code <target>` — targeted code review.
-   - `/security-review <target>` — focused security review.
+   - `/review-security <target>` — focused security review.
    - `/regression-test <change>` — scope what a change could affect.
    - `/add-feature <feature/module + description>` — scope and build a new
      feature in whichever repository owns it, reusing existing conventions.

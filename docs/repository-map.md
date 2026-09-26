@@ -25,15 +25,17 @@ been worked on since.
   `app/` model layout, Service-layer pattern for newer modules, inline
   `Validator::make()` not Form Requests, per-module `<Module>Maintenance`
   middleware, response envelope `{success, message?, <resource_key>}`),
-  plus an MRF-specific reference section kept in sync with the module's
-  own skill.
-- **Project-specific `.claude/skills/`**: `manpower-request` — the
+  plus a "Modules with their own skill" index. Module detail lives in the
+  skills; dated history in `docs/<module>-history.md`.
+- **Project-specific `.claude/skills/`**: `code-review`, `contract-review`,
+  `feature-development`, `live-testing`, `test-evidence`, and `manpower-request` — the
   canonical, actively-maintained reference for the MRF module (file
   locations, models, routes, approval-workflow state machine, validation,
-  permissions, and a living "Roadmap" section tracking done/deferred/next
-  — read that Roadmap first before touching MRF backend code).
-- **Project-specific `.claude/agents/`**: none found.
-- **Project-specific `.claude/commands/`**: none found.
+  permissions, and a "Module status" section tracking built/deferred/next
+  — read it before touching MRF backend code). Dated change history lives
+  in the repo's `docs/manpower-request-history.md`.
+- **Project-specific `.claude/agents/`**: `code-reviewer`, `contract-reviewer`, `feature-tester`, `mrf-backend-tester`.
+- **Project-specific `.claude/commands/`**: `add-feature`, `review-code`, `test-feature`, `test-mrf-backend`, `validate-contract`.
 - **Key directories for integration work**:
   - Routes: `routes/api.php`, grouped by module prefix (e.g.
     `manpower_request`, ~line 2293).
@@ -58,15 +60,15 @@ been worked on since.
   conventions (`AppRoutes.jsx` + `MainLayout.jsx` both required for a page
   to be reachable), Zustand store shape, API/service conventions (one
   `<name>Api.js` file per resource, all through the shared
-  `axiosInstance`), plus an MRF-specific "Manpower Request Conventions"
-  section kept in sync with the module's own skill.
-- **Project-specific `.claude/skills/`**: `manpower-request` — frontend
-  architecture/file-map, routes, permissions in use, forms, print layout,
-  and Record Hires detail for the MRF module; explicitly warns it went
-  stale once before and to cross-check the backend skill + root
-  `CLAUDE.md` rather than trusting it blindly.
-- **Project-specific `.claude/agents/`**: none found.
-- **Project-specific `.claude/commands/`**: none found.
+  `axiosInstance`), Docker lint/build commands, a "Modules with their own
+  skill" index, and a short Role & Permission entry. Dated history lives
+  in `docs/<module>-history.md`.
+- **Project-specific `.claude/skills/`**: `manpower-request` and
+  `employee-master-data` (current-state module references), plus
+  `code-review`, `feature-development`, `internal-contract-review`,
+  `test-evidence`.
+- **Project-specific `.claude/agents/`**: `code-reviewer`, `contract-checker`, `feature-tester`.
+- **Project-specific `.claude/commands/`**: `add-feature`, `review-code`, `validate-contract`, `verify-feature`.
 - **Key directories for integration work**:
   - API service layer: `src/services/<module>/<name>Api.js`.
   - State management: `src/store/*.js` (one Zustand store per

@@ -79,7 +79,7 @@ CLAUDE.md (root)          -- the rules everything else operates under
         /test-workflow   -> user-workflow-tester agent
         /cross-check-api -> cross-repository-review (direct, feature-scoped)
         /review-code     -> code-reviewer agent
-        /security-review -> security-reviewer agent
+        /review-security -> security-reviewer agent
         /regression-test -> regression-tester agent
         /add-feature     -> feature-development (direct, build-scoped)
 ```

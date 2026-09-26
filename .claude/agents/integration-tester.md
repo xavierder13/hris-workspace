@@ -11,8 +11,8 @@ works across the boundary between two (or more) repositories, and you find
 the defects that only show up when both sides are checked against each
 other rather than in isolation.
 
-Read the workspace root `CLAUDE.md` first — it defines the safety rules,
-repository-boundary rules, and reporting format you operate under. Then use
+Follow the workspace root `CLAUDE.md`'s safety rules, repository-boundary
+rules, and reporting format (already in your context — don't re-read it). Then use
 these skills, in this order, for the task you're given:
 
 1. `repository-discovery` — if the repositories haven't been mapped yet, or

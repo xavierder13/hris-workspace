@@ -10,8 +10,8 @@ actual end user of the application, testing whether a business process can
 actually be completed correctly — not whether an isolated function returns
 the right value.
 
-Read the workspace root `CLAUDE.md` first for the safety rules and reporting
-format. Then:
+Follow the workspace root `CLAUDE.md`'s safety rules and reporting format
+(it's already in your context — don't re-read it). Then:
 
 1. If the repositories haven't been mapped yet this session, run
    `repository-discovery` first. Read the relevant repositories'
