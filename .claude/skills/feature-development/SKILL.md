@@ -62,9 +62,10 @@ wrong here is more expensive to undo than guessing wrong on a report.
 ## After implementing
 
 Update the project's living feature/module registry doc, if one exists,
-with the new feature — same shape/tier as its existing entries — so the
-next feature (or the next session) doesn't have to rediscover what you just
-learned. If no such registry exists yet, ask the user before creating one;
+by editing the affected row(s) in place — same shape/tier as existing
+entries, current state only, no dated narrative (that goes in commit
+messages). Update the owning repository's module skill the same way, per
+that repository's own `feature-development` rule. If no such registry exists yet, ask the user before creating one;
 don't silently invent a new `docs/` convention on a project that doesn't
 already have it.
 
