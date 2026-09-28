@@ -44,10 +44,12 @@ either way, ask if it matters for a task.
 | — NTE (Notice to Explain) | `EmployeeNTEController`, prefix `employee_master_data/nte` | Disciplinary tab |
 | — Disciplinary | `EmployeeDisciplinaryController`, prefix `employee_master_data/disciplinary` | Disciplinary tab |
 | — Offboarding | `EmployeeOffboardingController`, prefix `employee_master_data/offboarding` | Offboarding tab (authoritative offboarding source) |
+| — Work Schedule | `EmployeeWorkScheduleController`, prefix `employee_master_data/work_schedule` (model `EmployeeWorkSchedule`) | Work Schedule tab |
 | — Acknowledgment Report | `EmployeeAcknowledgmentReportController`, prefix `employee_master_data/acknowledgment_reports` | `src/pages/employee_master_data/acknowledgment_report/` |
 | Recruitment | `RecruitmentController`, prefix `recruitment` — **external "careers" portal integrated over HTTP** (token auth via `getOrCreateToken()`), not a locally-owned dataset. `new_hired()` pulls newly-hired applicants from that external API; hires land in `EmployeeMasterData` (tracked via `EmployeeNewHiredSyncLog` to avoid re-syncing). `vacancies()` already computes Required Plantilla vs. Existing Headcount (reused by MRF's headcount snapshot — see below) | `src/pages/recruitment/JobApplicantList.jsx` |
-| Manpower Request (MRF) | `ManpowerRequestController` + `ManpowerRequestService`, prefix `manpower_request` | `src/pages/manpower_request/`, `src/services/manpower_request/manpowerRequestApi.js`, `manpowerRequestStore.js`, `useManpowerRequests.js` — see the `manpower-request` skill in each repository |
+| Manpower Request (MRF) | `ManpowerRequestController` + `ManpowerRequestService`, prefix `manpower_request` | `src/pages/manpower_request/`, `src/services/manpower_request/manpowerRequestApi.js`, `manpowerRequestStore.js`, `useManpowerRequests.js` — incl. Excel reports (`export` hiring report, Approved only; `export_status` per-line status report); see the `manpower-request` skill in each repository |
 | KPI Management | `KpiAuthController`, `KpiTemplateController`, `KpiTemplateItemController`, `KpiEvaluationController`, `KpiMyEvaluationController`, `KpiBehaviorCriteriaController`, `KpiSettingController`, `KpiReportController`, `KpiEmployeeController`, prefix `kpi` | `src/pages/kpi/{templates,evaluations,my-evaluations}`, `src/services/kpi/{kpiTemplateApi,kpiEvaluationApi}.js`, `kpiTemplateStore.js`, `kpiEvaluationStore.js` |
+| Area Assignment | `AreaController` + `AreaService`, prefix `area` (models `Area`/`AreaBranch`/`AreaHrHead`) — areas = groups of branches (a branch in ≤ 1 area), HR heads assigned per employee | `src/pages/area/`, `src/services/area/areaApi.js`, `areaStore.js`, `useAreas.js` — see the `record-management` skill in each repository |
 | Employee Loans | `EmployeeLoansController`, prefix `employee_loans` | none yet |
 | Employee Premiums | `EmployeePremiumsController`, prefix `employee_premiums` | none yet |
 | Employee Attendance Log | `EmployeeAttlogController`, prefix `employee_attlog` | none yet |
@@ -117,6 +119,9 @@ detail):
   Zustand store per resource under `src/store/`, one `use<Resource>.js`
   hook wrapping it — see `reactjs-ant-design`'s own `CLAUDE.md` for the
   exact shape.
+- **Admin CRUD / master-data modules**: start from each repository's
+  `record-management` skill (Area Assignment is the reference
+  implementation).
 - Both repos' own `CLAUDE.md` always win over anything summarized here for
   their own conventions — this file is an index across both, not a
   replacement for either.

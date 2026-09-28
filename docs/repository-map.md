@@ -18,6 +18,15 @@ been worked on since.
   banking, SMS blast, sales) bundled into one app. See
   `docs/hris-modules.md` for the "HRIS = the subset of vueportal that
   reactjs-ant-design consumes" framing.
+  **Correction (2026-09-22)**: this repo also ships its own embedded
+  **Vue 2.5 + Vuetify 2.4 SPA** (`resources/js/`, built with Laravel Mix —
+  `vue ^2.5.17`, `vuetify ^2.4.11` in `package.json`) serving most non-HRIS
+  modules directly, plus a few HRIS-adjacent admin screens that predate the
+  React frontend (e.g. `resources/js/views/role/`,
+  `resources/js/views/permission/`). The previous version of this map
+  omitted this entirely and described vueportal as API-only — it is not;
+  check `resources/js/router.js` / `resources/js/views/` before assuming a
+  feature needs no local frontend work here.
 - **Framework / version**: Laravel ^7.0, PHP ^7.2.5 (do not use newer
   syntax). Auth: `laravel/passport` ~9.0 (`auth:api` guard). Authorization:
   `spatie/laravel-permission` ^4.0.
@@ -28,7 +37,8 @@ been worked on since.
   plus a "Modules with their own skill" index. Module detail lives in the
   skills; dated history in `docs/<module>-history.md`.
 - **Project-specific `.claude/skills/`**: `code-review`, `contract-review`,
-  `feature-development`, `live-testing`, `test-evidence`, and `manpower-request` — the
+  `feature-development`, `live-testing`, `test-evidence`, `record-management`
+  (recipe for admin CRUD modules + Area Assignment reference), and `manpower-request` — the
   canonical, actively-maintained reference for the MRF module (file
   locations, models, routes, approval-workflow state machine, validation,
   permissions, and a "Module status" section tracking built/deferred/next
@@ -64,7 +74,8 @@ been worked on since.
   skill" index, and a short Role & Permission entry. Dated history lives
   in `docs/<module>-history.md`.
 - **Project-specific `.claude/skills/`**: `manpower-request` and
-  `employee-master-data` (current-state module references), plus
+  `employee-master-data` (current-state module references),
+  `record-management` (recipe for admin CRUD pages + Area Assignment), plus
   `code-review`, `feature-development`, `internal-contract-review`,
   `test-evidence`.
 - **Project-specific `.claude/agents/`**: `code-reviewer`, `contract-checker`, `feature-tester`.

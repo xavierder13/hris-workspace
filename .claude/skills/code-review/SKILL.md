@@ -56,14 +56,68 @@ not every review needs every category:
   newer one (or one released/updated after the knowledge cutoff) can have
   renamed or deprecated the exact prop being used, producing a runtime
   console warning that won't surface as a build error and won't be visible
-  without a browser (confirmed case: AntD `Divider`'s `orientation` prop
-  was renamed to `titlePlacement` in a version newer than commonly
-  recalled). Before relying on a specific prop name/shape for a UI
+  without a browser (confirmed case: AntD `Divider`'s `type` prop is
+  deprecated in favor of `orientation` in a version newer than commonly
+  recalled — **correction 2026-09-23**: this bullet previously claimed
+  `orientation` itself was "renamed to `titlePlacement`," which was wrong;
+  re-verified directly against the installed `divider/index.d.ts` —
+  `orientation` is current and non-deprecated, `titlePlacement` is an
+  unrelated prop for text position, never a rename target for it; don't
+  repeat that claim). Before relying on a specific prop name/shape for a UI
   library, check the installed version's own source or type defs
   (`node_modules/<package>/**/*.d.ts`, or the runtime source itself) when
   the prop touches placement, sizing, or anything that existed in an
   older major version of that library — don't assume recalled API shape
-  is current.
+  is current. **A component's real prop types don't always live in its
+  `index.d.ts`** (confirmed case: AntD `Alert`'s `message`/`title` are
+  declared in `alert/Alert.d.ts`, only re-exported from `index.d.ts`) —
+  grep every `.d.ts` file under that component's folder
+  (`grep -rn "@deprecated" node_modules/<package>/es/<component>/`), not
+  just the top-level one, or a real deprecated prop can be missed even
+  when you did check. This check is easy to skip in practice because it
+  only fires when someone remembers to run it manually on the specific
+  component just touched — for a real regression check (e.g. after a
+  batch of UI edits, or when a console warning is reported with no
+  component named), a scripted sweep across every component actually
+  imported in the app is more reliable than a per-file spot-check: collect
+  every `import { X } from "antd"` name in `src/`, grep `@deprecated`
+  across each one's whole `node_modules` folder (not just `index.d.ts`),
+  then grep the app's own JSX for that component tag using that specific
+  prop name (strip `//` comments from the matched attribute text first —
+  a prop name mentioned only in a comment, e.g. explaining a prior fix, is
+  a false positive, not a live finding). This found and fixed 3 real
+  instances across the whole `reactjs-ant-design` app in one pass
+  (2026-09-23), 2 of which a prior module-scoped, `index.d.ts`-only audit
+  had missed — see that repo's own `CLAUDE.md` for the specific findings.
+  **A whole component, not just a prop, can be deprecated too** — confirmed
+  case: AntD's `List` itself logs a deprecation warning unconditionally on
+  every render, with no `@deprecated` tag on any individual prop in its
+  `.d.ts` (whole-component deprecations don't reliably show up that way);
+  it's only visible by grepping the runtime `.js` for `'deprecated'`
+  strings, not just the type defs. Same sweep method applies — collect
+  every component actually imported, don't just check the one a report
+  named, since (2026-09-24) a single reported instance on one page led to
+  2 more of the exact same deprecated component elsewhere in the app.
+- **Modal-hosted form timing (AntD, or any UI library with the same
+  lazy-mount-on-open + destroy-on-close pattern)**: a `Form` connected via
+  `Form.useForm()` that lives inside a `Modal` isn't in the render tree
+  until the Modal has actually opened — a Modal that unmounts its content
+  on close (AntD's `destroyOnHidden`, this workspace's standard for its
+  list→modal CRUD pages) re-triggers this on every open, not just the
+  first. A handler that populates or resets the form (`resetFields()`,
+  `setFieldsValue()`) synchronously in the same function that also flips
+  the "open" state — the common shape being `openCreate`/`openEdit`
+  calling `form.setFieldsValue(...)` then `setModalOpen(true)` — runs
+  before that render happens, producing a real runtime warning ("Instance
+  created by `useForm` is not connected to any Form element") that, like
+  the deprecated-prop class of bug above, won't surface without a browser.
+  The fix is to move that population/reset into the Modal's own
+  `afterOpenChange` callback instead, so it runs only once the Form is
+  actually mounted. Confirmed real, 2026-09-23: a single reported instance
+  (`reactjs-ant-design`'s new Work Schedule tab) led to a sweep that found
+  the exact same copy-pasted bug in 6 other files across that repo — see
+  its own `CLAUDE.md`'s Form and Validation Conventions section for the
+  full list and the correct pattern to match.
 - **Duplication**: real, harmful duplication (the same business rule
   encoded twice, likely to drift) vs. superficial similarity that doesn't
   need a shared abstraction. Don't flag the second kind.

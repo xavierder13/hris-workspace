@@ -16,6 +16,7 @@
 #     backend-repo/): each keeps its own separate git history/remote ---
 /vueportal/
 /reactjs-ant-design/
+/recruitment-portal/
 
 # --- Test results are ephemeral, environment-specific output ---
 /test-results/*
