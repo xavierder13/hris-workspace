@@ -65,8 +65,10 @@ Branch (`BranchController`, `branch`), Company (`CompanyController`,
 Position (`PositionController`, `position`), Address
 (`AddressController`, `address`). Frontend: `branchStore.js`,
 `departmentStore.js`, `positionStore.js` + matching hooks — consumed as
-dropdown/reference data by MRF and other forms, no dedicated CRUD pages in
-this frontend today.
+dropdown/reference data by MRF and other forms. CRUD pages for Company,
+Branch, Department, Position, Rank and Promodizer Brand live in
+`src/pages/record_management/` (menu Set Up → Organization); no Division or
+Address page yet — see the `record-management` skill in reactjs-ant-design.
 
 ### Tier 3 — Cross-cutting platform infrastructure (not HR-specific at all)
 
