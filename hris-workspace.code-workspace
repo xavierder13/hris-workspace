@@ -1,0 +1,40 @@
+{
+  // Open with: File → Open Workspace from File… (or `code hris-workspace.code-workspace`).
+  //
+  // Each application repo is its own root, so VS Code reads that repo's own
+  // .gitignore. Opening the bare hris-workspace folder hides all three repos
+  // from Ctrl+P / search, because the workspace's .gitignore lists them.
+  "folders": [
+    { "name": "hris-workspace", "path": "." },
+    { "name": "vueportal (Laravel backend)", "path": "vueportal" },
+    { "name": "reactjs-ant-design (React HRIS frontend)", "path": "reactjs-ant-design" },
+    { "name": "recruitment-portal (Laravel careers portal)", "path": "recruitment-portal" }
+  ],
+  "settings": {
+    // The repos already appear as their own roots — don't list them twice
+    // under hris-workspace. (Globs are relative to each root; only the
+    // hris-workspace root has these folders.)
+    "files.exclude": {
+      "vueportal": true,
+      "reactjs-ant-design": true,
+      "recruitment-portal": true
+    },
+    // Keep Ctrl+P and search to source code
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/vendor": true,
+      "**/dist": true,
+      "**/storage/framework": true,
+      "**/storage/logs": true,
+      "**/public/js": true,
+      "**/public/css": true,
+      "**/package-lock.json": true,
+      "**/composer.lock": true
+    },
+    "files.watcherExclude": {
+      "**/node_modules/**": true,
+      "**/vendor/**": true,
+      "**/storage/**": true
+    }
+  }
+}
