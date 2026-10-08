@@ -53,6 +53,7 @@ either way, ask if it matters for a task.
 | Employee Loans | `EmployeeLoansController`, prefix `employee_loans` | none yet |
 | Employee Premiums | `EmployeePremiumsController`, prefix `employee_premiums` | none yet |
 | Employee Attendance Log | `EmployeeAttlogController`, prefix `employee_attlog` | none yet |
+| Leave Management | `LeaveTypeController` (prefix `leave_type`), `EmployeeLeaveController` + `LeaveService` (prefix `leave`) — leave types, applications (HR files, HR approves), balances and credits; days counted from Work Schedule rest days and the Holiday Calendar | `src/pages/leave/` (menu Time & Leave) — see the `leave-management` skill in reactjs-ant-design |
 | Holiday Calendar | `HolidayCalendarController`, prefix `holiday_calendar` (`holiday_calendars` + `holiday_calendar_branches`; `import`/`template/download` routes have no controller methods) | `src/pages/record_management/holiday_calendar/` (`/holiday-calendar`, calendar + list views) — see the `record-management` skill in reactjs-ant-design |
 | Training File Library (by position, not per-employee) | `TrainingController`, prefix `training` (uploads/permissions, position-scoped) | none yet |
 | Legacy Employee module | `EmployeeController` (model `App\Employee`, import/export) — **appears superseded by Employee Master Data**; confirm before building anything new on it | none |
