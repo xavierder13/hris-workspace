@@ -82,8 +82,14 @@ Auth (`AuthController`, `auth`), User/Role/Permission
 `user`/`role`/`permission`), the shared multi-level approval engine
 (`AccessModuleController`/`AccessChartController`/`AccessChartUserMapController`,
 prefixes `access_module`/`access_chart`/`access_chart_user_map` — used by
-MRF and also by non-HR modules like Marketing Event), Activity Log
-(`ActivityLogController`, `activity_logs`), Email
+MRF and also by non-HR modules like Marketing Event), Activity Log /
+Audit Trail (`ActivityLogController`, `activity_logs`, `activity-logs`
+permission — spatie/laravel-activitylog's `activity_log`; models with
+`App\Traits\AuditsActivity` log every add / edit / delete with the user and
+old / new values: Leave, Attendance and Payroll records today, so a new
+HR record that needs a trail adds the trait; React page
+`src/pages/audit_trail/`, the Vue Activity Logs page reads the old
+`index`), Email
 (`EmailController`, `email`). Frontend: `authStore.js`, `useAuth.js`,
 `src/pages/{user,role,permission}/` (Role & Permission pages are built; see
 `reactjs-ant-design/CLAUDE.md`). **The platform `Administrator` role can do

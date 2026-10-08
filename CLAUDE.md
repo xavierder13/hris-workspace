@@ -19,6 +19,13 @@ fastify/koa → Node backend; two of the same kind is possible — report what
 you find). `docs/repository-map.md` is a cache of the last discovery:
 verify a claim against the repository before relying on it.
 
+## Current plan
+
+`docs/hris-roadmap.md` holds the agreed next phases (up to payroll), the
+user's decisions for each, pending production deploy steps and open
+questions. Read it before starting HRIS feature work, and keep it current
+when a phase ships.
+
 ## Repository boundaries
 
 Each repository is authoritative over itself.
