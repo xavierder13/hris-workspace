@@ -61,7 +61,14 @@ Every phase follows the same pattern as Leave and Manual Time Entries:
 - Bulk data updates go through Generate Template, then fill, then Import, not scripts.
 - Commit one feature per repo, and test as the user would before committing.
 
-### 1. Salary / compensation history
+### 1. Salary / compensation history — BUILT (skill `compensation`)
+
+Pushed 2026-10-08 after lint, build, backend transaction tests and HTTP
+import tests. **Not yet done:** a full code review and a browser workflow
+test (`/review-code`, `/test-workflow` on the compensation files) — run
+them before production. Production: migrate `2026_10_09_140000` by path,
+run PermissionSeeder, grant `compensation-*` to the payroll / HR roles
+(which roles: ask the user).
 
 Record management of each employee's pay, kept as versions by effective date.
 
@@ -89,7 +96,12 @@ Payroll is semi-monthly, paid on the **15th and the end of the month**. The user
 
 ### 4. Overtime filing
 
-An OT application, built like Manual Time Entries:
+An OT application. **User decision (2026-10-08): overtime filing is the
+same process as Manual Time Entries — reuse the time-entry components
+(index, form modal with the day's schedule + biometric punches, details
+modal with ApprovalSteps, helpers) and its approval procedure and
+approving officers (same Access Chart approvers), rather than building a
+new flow.** Details:
 - **Approval:** the shared approval engine with an Access Chart for "Overtime". Level 1 by subordinates (position_subs), the required approval count, the MRF managerial approvers added, and visibility by subordinates, approver and permission. One action per approver, and no self-approval.
 - **Cut-off switch:** blocked by the cut-off filing switch (`PayrollCutoffService::assertFilingOpen`).
 - **Fields:** date, OT start and end, hours, reason, and the type of day (regular, rest day, holiday), derived from `ScheduleService` and the Holiday Calendar.
