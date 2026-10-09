@@ -333,10 +333,9 @@ Deploy: migrate `2026_10_14_130000` after `110000`.
 
 **Still to do:**
 1. End-to-end review defects (2026-10-09):
-   - Fixed: a paid leave / time entry / overtime can't be cancelled (vueportal `2202a4a`, React `74f68e9`) — corrections go through Retro.
-   - Not applicable on this device: BioBridge (MSSQL) isn't reachable here; payroll tests use manual time entries / imported attendance logs instead.
-   - Waiting for the user: freeze a Pending payroll (close filing on submit vs. a "changed since generated" warning); refuse approving a cut-off while an earlier one of the same month is Draft / Pending.
-   - Small fixes not yet applied: Administrator approve text ("still needs 1 more"), loans numbering a month's cut-offs by start date vs. contributions by end date, approval error that names no employee when a loan changed after generating.
+   - Fixed: a leave / time entry / overtime paid by an approved payroll, or inside a payroll waiting for approval, can't be cancelled except by an Administrator (user decision 2026-10-09: Administrator can do everything); paid ones are corrected through Retro. Submitting a payroll turns its cut-off's filing off (user decision: the period is locked while waiting for approval); a disapproval turns it back on only if the submit did. Also fixed: Administrator approve text, loans numbering a month's cut-offs like contributions, and the approval error naming the employee when a loan changed. vueportal `2202a4a`, `c4ba0e8`; React `74f68e9`, `16d2c70`.
+   - Not applicable on this device: BioBridge (MSSQL) isn't reachable here; payroll tests use manual time entries / imported attendance logs.
+   - Waiting for the user: refuse approving a cut-off while an earlier one of the same month is Draft / Pending?
 2. **Known limits to tell the user:**
    - Groups, reports and pay sheet subtotals use the employee's **current** branch / position (payslips keep no branch).
    - Rollback leaves the cut-off's filing closed.
@@ -350,6 +349,7 @@ Deploy: migrate `2026_10_14_130000` after `110000`.
 **Local test data (this device, 2026-10-09)** — for payroll testing, all marked TEST:
 - Xavier De Guzman (2191): 41 approved manual time entries, Aug–Sep 2026 work days (reason "TEST data — …"); 5 approved overtimes (08/12, 08/26, 09/10, 09/19 rest day, 09/23 night diff).
 - His setup: allowances Rice ₱2,000 / month, Transpo ₱1,500 / cut-off, Meal ₱100 / day worked (from 08/01); deductions TEST-SSS-SL-001 (₱1,000 every cut-off) and TEST-HDMF-MPL-001 (₱500 on the 2nd cut-off); contribution profile with a TEST bank account and ₱200 Pag-IBIG voluntary; Payroll Settings employer = "TEST Employer Corp.".
+- Lock tests left: 2026-10-A run Cancelled, TEST-CA-LOCK deduction Cancelled, 10/05 time entry Cancelled, OT 09/10 cancelled by an Administrator (still paid in 09-A).
 - Payroll runs: 2026-08-A, 08-B, 09-A, 09-B Approved (filing off; 09-B went through the end-to-end test — see `test-results/2026-10-09-payroll-end-to-end.md`, local to this device).
 - The "Payroll Run" Access Chart has level 1 (2 required) with no approvers mapped, so only an Administrator can approve here.
 
