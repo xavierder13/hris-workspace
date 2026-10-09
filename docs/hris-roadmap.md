@@ -347,6 +347,11 @@ Test records were deleted. The test token was revoked.
    - Filters: date range, or a cut-off range (send the first cut-off's date_from and the last one's date_to); company / branch / position; employees.
    - Table: one row per employee (SSS EE/ER/EC, PhilHealth EE/ER, Pag-IBIG EE/voluntary/ER, tax, EE / ER totals), expandable per cut-off (shared ExpandIcon). Totals row; Download Excel.
    - API is ready: `payrollReportApi.contributionHistory` / `contributionHistoryDownload`.
+   - **Also a per-employee "History" modal** on Payroll → Contributions:
+     - A row action next to the existing compute preview (`ContributionComputeModal` only previews a date's computed monthly contributions; it shows no past deductions).
+     - It shows that employee's actual deductions per cut-off from approved payslips, with a totals row.
+     - It has a date range (default this year) and Download Excel.
+     - Same endpoint with `employee_ids: [id]`.
 2. **Phase 15 React page** — "Pay Sheet":
    - Same filters; tabs By Employee / By Company / By Branch / By Position / By Cut-off; Download Excel.
    - "Print Payslips": `payrollReportApi.payslips` → join `payslipHtml(p.payslip, p.run, employer)` with a page break between payslips → `printDocument`.
