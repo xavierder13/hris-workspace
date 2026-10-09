@@ -418,8 +418,6 @@ Found while building payroll records; none is applied yet.
 
 ## Open questions to ask the user
 
-- Pushing: not done from the 2026-10-10 session (blocked by the permission settings) — push vueportal `F-HRIS-Staging`, reactjs-ant-design and this workspace `master`.
-
 - Restore level 2 approval on the Leave and Manual Time Entry access charts? Someone removed it locally and added user "Bhem" at level 1. The level-2 approver mappings are still there, and one leave (#34) and one time entry are still Pending at level 2 — their Approval Route no longer shows that level.
 - Should only HR cancel an already-approved leave or time entry?
 - Should manual time-entry filing be limited to the filer's subordinates?
