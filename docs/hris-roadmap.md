@@ -324,6 +324,25 @@ Phases 11–15 are committed and pushed: vueportal `F-HRIS-Staging`, reactjs-ant
 Test records were deleted. The test token was revoked.
 
 **Still to do:**
+0. **Per-employee rollback + employee selection on the first generate.** The backend is built and tested (11 checks, rolled-back transaction); the React screens are TO DO.
+   - **Model:** `payroll_run_employees.posted_at` (migration `2026_10_14_130000`; it backfills approved runs). A posted payslip is approved and locked.
+     - `PayrollRunEmployee::approved()` (posted and the run not Cancelled) is what reports, My Payslips, 13th month and final pay read. A payslip kept through a rollback stays visible.
+     - Approval (`finalize`) posts only unposted rows, so deduction payments are never duplicated.
+   - **Rollback:** `rollback(id, reason, employee_ids?)` (null = all). It removes those employees' Payroll deduction payments for the cut-off, reopens their retros and unposts them.
+     - The run goes back to Draft (submit and approve again); the other employees stay approved.
+     - It works on an Approved run, or a Draft that still has approved payslips.
+   - **Generate:**
+     - `employee_ids` now also works on a cut-off with no run yet (a run with just those employees).
+     - Approved (posted) employees are never recomputed: selecting one is refused, and Regenerate All skips them.
+     - With posted rows kept, a Payroll Settings or premium-rate change blocks generating.
+     - Cancel is refused while posted rows remain.
+   - **New endpoint:** `payroll_run/cutoff_candidates/{cutoffId}` — eligible employees for a cut-off; `candidates` rows now carry `approved`. `show` employees carry `approved`.
+   - **React TO DO:**
+     - `PayrollRunPage`: on Approved, or on a Draft with approved rows, allow ticking approved rows. "Roll Back Selected" / "Roll Back All" send `employee_ids` (`payrollRunApi.rollback(id, reason)` needs an `employeeIds` argument). Show an "Approved" tag (locked) on posted rows and keep them out of Generate Selected.
+     - `RegenerateEmployeesModal`: disable the `approved` options.
+     - `PayrollRunIndex` generate modal: an "All employees / Selected employees" choice, using `cutoff_candidates`, sending `employee_ids`.
+     - Update the payroll-run skill's "Generate selected / roll back" section to this model.
+   - **Deploy:** migrate `2026_10_14_130000` after `110000`.
 1. **Phase 14 React page** — Payroll → Reports & Compliance → "Contribution History":
    - Filters: date range, or a cut-off range (send the first cut-off's date_from and the last one's date_to); company / branch / position; employees.
    - Table: one row per employee (SSS EE/ER/EC, PhilHealth EE/ER, Pag-IBIG EE/voluntary/ER, tax, EE / ER totals), expandable per cut-off (shared ExpandIcon). Totals row; Download Excel.
@@ -333,18 +352,23 @@ Test records were deleted. The test token was revoked.
    - "Print Payslips": `payrollReportApi.payslips` → join `payslipHtml(p.payslip, p.run, employer)` with a page break between payslips → `printDocument`.
    - API is ready: `paySheet` / `paySheetDownload` / `payslips`.
 3. Add both pages to `AppRoutes.jsx` and to the MainLayout "Reports & Compliance" group (permission `payroll-report-view`), plus page titles.
-4. Run `/review-code` and `/test-workflow` for phases 11–15.
+4. Run `/review-code` and `/test-workflow` for phases 11–15 and the per-employee rollback.
 5. Document phases 14–15 in the payroll-run skill (`reactjs-ant-design/.claude/skills/payroll-run/SKILL.md`).
 6. **Known limits to tell the user:**
    - Groups, reports and pay sheet subtotals use the employee's **current** branch / position (payslips keep no branch).
    - Rollback leaves the cut-off's filing closed.
    - The Audit Trail now also lists Payroll Run, Default Schedule and Attendance Log Import records.
-7. **Older offers still open:** remittance payment log; future approved leave shows as Upcoming instead of On Leave in the DTR.
+7. **Fixes / checks found:**
+   - Local run 17 (2026-10-B, Draft) was made by someone else — leave it, or ask.
+   - The Salary import's "same employee on line N" message numbers rows differently from the error list's Excel Row (pre-existing; the attendance import uses the Excel row).
+   - The ActivityLogController description filter only allows created / updated / deleted, so the 'imported' entries can't be filtered by action.
+8. **Older offers still open:** remittance payment log; future approved leave shows as Upcoming instead of On Leave in the DTR.
 
 **Deploy (production), after step 8 above** — migrations by path:
 - `2026_10_14_100000` (group_schedules)
 - `2026_10_14_110000` (payroll run rollback)
 - `2026_10_14_120000` (attendance_logs)
+- `2026_10_14_130000` (payslip posted_at; backfills approved runs)
 
 Then run PermissionSeeder (new: `group-schedule-list/-create/-edit/-cancel`, `payroll-run-rollback`, `attendance-log-template-download`, `attendance-log-import`) and grant those permissions to the HR / payroll roles.
 
