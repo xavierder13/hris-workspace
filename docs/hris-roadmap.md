@@ -332,7 +332,7 @@ over HTTP (partial rollback, approved row refused for generate / cancel).
 Deploy: migrate `2026_10_14_130000` after `110000`.
 
 **Still to do:**
-1. Run `/review-code` and `/test-workflow` for phases 11–15 and the per-employee rollback (not done this session — the browser check above was a smoke test, not a full workflow test).
+1. Fix the defects from the 2026-10-09 end-to-end review (`test-results/2026-10-09-payroll-end-to-end.md`, local to this device): cancel inside an approved cut-off (D1), Pending run not frozen (D2), silent BioBridge outage (D3), cut-off approval order (D4), Administrator approve text (D5). Ask the user which to fix first.
 2. **Known limits to tell the user:**
    - Groups, reports and pay sheet subtotals use the employee's **current** branch / position (payslips keep no branch).
    - Rollback leaves the cut-off's filing closed.
@@ -346,8 +346,8 @@ Deploy: migrate `2026_10_14_130000` after `110000`.
 **Local test data (this device, 2026-10-09)** — for payroll testing, all marked TEST:
 - Xavier De Guzman (2191): 41 approved manual time entries, Aug–Sep 2026 work days (reason "TEST data — …"); 5 approved overtimes (08/12, 08/26, 09/10, 09/19 rest day, 09/23 night diff).
 - His setup: allowances Rice ₱2,000 / month, Transpo ₱1,500 / cut-off, Meal ₱100 / day worked (from 08/01); deductions TEST-SSS-SL-001 (₱1,000 every cut-off) and TEST-HDMF-MPL-001 (₱500 on the 2nd cut-off); contribution profile with a TEST bank account and ₱200 Pag-IBIG voluntary; Payroll Settings employer = "TEST Employer Corp.".
-- Payroll runs: 2026-08-A, 08-B, 09-A Approved (filing off); 2026-09-B Draft (it was used for the rollback test).
-- The "Payroll Run" Access Chart has no levels here, so payroll-run-approve decides in one step.
+- Payroll runs: 2026-08-A, 08-B, 09-A, 09-B Approved (filing off; 09-B went through the end-to-end test — see `test-results/2026-10-09-payroll-end-to-end.md`, local to this device).
+- The "Payroll Run" Access Chart has level 1 (2 required) with no approvers mapped, so only an Administrator can approve here.
 
 **Deploy (production), after step 8 above** — migrations by path:
 - `2026_10_14_100000` (group_schedules)
