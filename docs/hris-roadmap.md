@@ -337,8 +337,10 @@ Deploy: migrate `2026_10_14_130000` after `110000`.
    - Not applicable on this device: BioBridge (MSSQL) isn't reachable here; payroll tests use manual time entries / imported attendance logs.
    - Done (user decision 2026-10-09): a month's payrolls are approved in order — submit / approve refused while an earlier cut-off of the month is Draft / Pending; generating refused while a later one is Pending / Approved (vueportal `22a7dbe`).
    - User decision 2026-10-09: salary / pay visibility stays permission-based (payroll-run-list / payroll-report-view show pay).
-   - Payroll Run / 13th Month approvers: Lady Rose Lutrania + Marilou Baltazar are mapped at level 1 (2 required) on this device too, but neither has the "Payroll Approver" role (payroll-run-approve) — assign it, or they get 401.
-   - Proposed, waiting for the user: leave vs. time entry / overtime on the same day rules; payroll role set (Payroll Officer / Payroll Manager / Timekeeper / Employee Self-Service + the existing approver roles).
+   - Payroll Run / 13th Month approvers: Lady Rose Lutrania + Marilou Baltazar (mapped at level 1, 2 required) now have the "Payroll Approver" role on this device — give it to them in production too.
+   - Done 2026-10-09 (user decision): leave days without credit are filed and unpaid (deducted like an absence), not refused; a full-day leave and a time entry / overtime can't share a day (half-day leave can). vueportal `1d3426a`, React `f7d8bfa`.
+   - Done: `PayrollRoleSeeder` — Payroll Officer, Payroll Manager, Timekeeper, Employee Self-Service (view only), plus the four approver roles.
+   - Waiting for the user: Employee Self-Service filing — limit leave / time entry / overtime filing to the user's own employee (and subordinates?) for users without `*-list-all`, then add the create permissions to that role.
 2. **Known limits to tell the user:**
    - Groups, reports and pay sheet subtotals use the employee's **current** branch / position (payslips keep no branch).
    - Rollback leaves the cut-off's filing closed.
@@ -361,6 +363,8 @@ Deploy: migrate `2026_10_14_130000` after `110000`.
 - `2026_10_14_110000` (payroll run rollback)
 - `2026_10_14_120000` (attendance_logs)
 - `2026_10_14_130000` (payslip posted_at; backfills approved runs)
+
+Also migrate `2026_10_15_100000` (leave unpaid_days), run `PayrollRoleSeeder` after PermissionSeeder, and give "Payroll Approver" to the Payroll Run approvers.
 
 Then run PermissionSeeder (new: `group-schedule-list/-create/-edit/-cancel`, `payroll-run-rollback`, `attendance-log-template-download`, `attendance-log-import`) and grant those permissions to the HR / payroll roles. Deploy vueportal `3bc1319` (Roles / Permissions guard fix) with it.
 
