@@ -340,7 +340,10 @@ Deploy: migrate `2026_10_14_130000` after `110000`.
    - Payroll Run / 13th Month approvers: Lady Rose Lutrania + Marilou Baltazar (mapped at level 1, 2 required) now have the "Payroll Approver" role on this device — give it to them in production too.
    - Done 2026-10-09 (user decision): leave days without credit are filed and unpaid (deducted like an absence), not refused; a full-day leave and a time entry / overtime can't share a day (half-day leave can). vueportal `1d3426a`, React `f7d8bfa`.
    - Done: `PayrollRoleSeeder` — Payroll Officer, Payroll Manager, Timekeeper, Employee Self-Service (view only), plus the four approver roles.
-   - Waiting for the user: Employee Self-Service filing — limit leave / time entry / overtime filing to the user's own employee (and subordinates?) for users without `*-list-all`, then add the create permissions to that role.
+   - Done 2026-10-09/10 (user decision): own vs. others permissions — `leave-/time-entry-/overtime-create-own / -edit-own / -cancel-own` (own employee record only, cancel while Pending) beside the existing any-employee ones; `*-list` = own + filed + to approve, `*-list-all` = everyone. Employee Self-Service gets list + the -own ones. vueportal `dbcd323`, React `f89e949`.
+   - Done: Payroll Officer given to Lady Rose Lutrania, Marilou Baltazar, Grace Mae Hidalgo (this device). Note: Lady Rose and Marilou are also the only Payroll Run approvers (2 required) — if one of them submits, she can't approve her own, so let Grace generate and submit.
+   - Decided by Claude (user delegated, 2026-10-10): daily-rate factor stays 313; SSS / PhilHealth / Pag-IBIG on the 2nd cut-off, tax every cut-off; overtime minimum 30 min and rounded down per 15 min (Payroll Settings → Overtime, migration `2026_10_15_110000`; vueportal `f5322a4`, React `dd10845`); pre-shift overtime counts when approved.
+   - User manual (simple steps, setup → reports): Claude Docs "HRIS Payroll — User Manual", https://claude.ai/code/artifact/aa765f8d-62a9-427a-a30b-f53d7c1cbed0 (private until shared).
 2. **Known limits to tell the user:**
    - Groups, reports and pay sheet subtotals use the employee's **current** branch / position (payslips keep no branch).
    - Rollback leaves the cut-off's filing closed.
@@ -364,7 +367,7 @@ Deploy: migrate `2026_10_14_130000` after `110000`.
 - `2026_10_14_120000` (attendance_logs)
 - `2026_10_14_130000` (payslip posted_at; backfills approved runs)
 
-Also migrate `2026_10_15_100000` (leave unpaid_days), run `PayrollRoleSeeder` after PermissionSeeder, and give "Payroll Approver" to the Payroll Run approvers.
+Also migrate `2026_10_15_100000` (leave unpaid_days) and `2026_10_15_110000` (overtime rules), run PermissionSeeder (new `*-create-own / -edit-own / -cancel-own`) then `PayrollRoleSeeder`, and give "Payroll Approver" to the Payroll Run approvers.
 
 Then run PermissionSeeder (new: `group-schedule-list/-create/-edit/-cancel`, `payroll-run-rollback`, `attendance-log-template-download`, `attendance-log-import`) and grant those permissions to the HR / payroll roles. Deploy vueportal `3bc1319` (Roles / Permissions guard fix) with it.
 
@@ -415,14 +418,11 @@ Found while building payroll records; none is applied yet.
 
 ## Open questions to ask the user
 
+- Pushing: not done from the 2026-10-10 session (blocked by the permission settings) — push vueportal `F-HRIS-Staging`, reactjs-ant-design and this workspace `master`.
+
 - Restore level 2 approval on the Leave and Manual Time Entry access charts? Someone removed it locally and added user "Bhem" at level 1. The level-2 approver mappings are still there, and one leave (#34) and one time entry are still Pending at level 2 — their Approval Route no longer shows that level.
 - Should only HR cancel an already-approved leave or time entry?
 - Should manual time-entry filing be limited to the filer's subordinates?
 - Should leave reasons and remarks stay visible to every `activity-logs` holder in the Audit Trail?
 - Hiring Officer eligibility: also Branch Managers / Top Management, or only ADMINISTRATION + Managerial?
 - Known bug, fix offered but not applied: `employeeApi.delete` sends `{ids}` while the backend reads `employee_id`.
-- Which roles get the payroll permissions (`compensation-*`, `allowance-*`, `deduction-*`, `retro-*`, `contribution-*`, `payroll-setting-*`, `overtime-*`)?
-- Production's permission guard: the committed `User::$guard_name` is `"api"`, so roles and permissions must be `api` (`SELECT guard_name, COUNT(*) FROM roles GROUP BY 1` before seeding). This device's DB is all `api`; the other device's local DB was `web` with an uncommitted User edit — convert that DB rather than the code. Fixed 2026-10-09 (vueportal `3bc1319`): the Roles / Permissions pages hard-coded `'web'` on create, so a role made there couldn't get permissions or be assigned; they now use the User model's guard.
-- Daily-rate factor: default 313 (6-day week) — confirm 261 / 313 / 365.
-- Statutory deduction schedule defaults OK (SSS / PhilHealth / Pag-IBIG on the 2nd cut-off, tax every cut-off)?
-- Overtime: minimum minutes, OT before the shift, rounding?
