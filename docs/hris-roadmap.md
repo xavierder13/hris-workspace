@@ -87,9 +87,12 @@ Every phase follows the same pattern as Leave and Manual Time Entries:
 ### 1. Salary / compensation history — BUILT (skill `compensation`)
 
 Pushed 2026-10-08 after lint, build, backend transaction tests and HTTP
-import tests. **Not yet done:** a full code review and a browser workflow
-test (`/review-code`, `/test-workflow` on the compensation files) — run
-them before production. Production: migrate `2026_10_09_140000` by path,
+import tests. The bulk import (Generate Template → fill by employee code →
+Import Data, from Salary History or Employee Master Data) passed a browser
+workflow test on 2026-10-09: added, unknown code and bad change type
+rejected, all or nothing. **Not yet done:** a full code review and a
+browser test of the Add / Edit / Delete forms — run them before
+production. Production: migrate `2026_10_09_140000` by path,
 run PermissionSeeder, grant `compensation-*` to the payroll / HR roles
 (which roles: ask the user).
 
@@ -120,9 +123,13 @@ Allowance types, plus employee allowances with effective dates and history. Sepa
 
 Decided: no approval, history kept, visible by permission, audited. Template and import for bulk.
 
-### 3. Configurable cut-off generator
+### 3. Configurable cut-off generator — BUILT (skill `payroll-run`)
 
-Payroll is semi-monthly, paid on the **15th and the end of the month**. The user wants it **dynamic**: configurable period start and end days and pay days, rather than the fixed 1–15 / 16–end that "Generate Year" makes today. Probably a stored setting the generator reads. Keep the filing switch as it is.
+Payroll Settings → Cut-offs & Pay Days: the two start days (1 / 16, or
+26 / 11 …), the pay day of each (0 = last day), and a pay day on a Sunday /
+holiday moved to the previous / next working day. Generate Year reads them
+and can re-apply pay dates to existing cut-offs. Local 2026 cut-offs were
+re-dated (they paid 5 days after the end).
 
 ### 4. Overtime filing — BUILT
 
@@ -149,7 +156,13 @@ new flow.** Details:
 - **Rules:** permissions `overtime-list(-all)/-create/-edit/-approve/-cancel`, and audited.
 - **To design:** minimum OT, whether OT before the shift counts, and rounding.
 
-### 5. DTR / timekeeping per cut-off — NEXT
+### 5. DTR / timekeeping per cut-off — BUILT (Payroll → Timekeeping, skill `payroll-run`)
+
+Built 2026-10-09 as `DtrService` (computed live, copied onto each payroll
+run): punches by shift window (night shifts), manual time entries,
+leave, overtime, holidays by branch; a holiday is never an absence;
+rest-day work pays through approved overtime; dates from today on are
+Upcoming. The original brief:
 
 User decision (2026-10-08): the attendance basis is the **Attendance tab
 (biometric logs) combined with approved leave, overtime and manual time
@@ -176,6 +189,14 @@ tax). When each is deducted is a Payroll Settings choice — user decision
 2026-10-08: **dynamic, every cut-off or once a month** (seeded: SSS /
 PhilHealth / Pag-IBIG on the 2nd cut-off, tax every cut-off).
 
+A renewed table can be imported (Contribution Tables → Import Version):
+the agency's Excel template comes pre-filled with its latest version; the
+upload goes with an effective date and is previewed before it is saved — a
+new date adds a version, the date of a saved version replaces its brackets
+(needs `contribution-table-edit` as well as `-create`). Each bracket is
+compared with the version it follows or replaces (new / changed with the
+old value / removed). No new permission or migration.
+
 ### 7. Deductions and loans — BUILT (scheduled deductions)
 
 New tables, not the legacy `employee_loans` / `employee_premiums` (those
@@ -189,7 +210,15 @@ suggested from back-dated Salary History) are built too
 
 Backend controllers exist with no React pages: `EmployeeLoansController`, `EmployeePremiumsController`. Add recurring and one-time deductions and loan amortization per cut-off.
 
-### 8. Payroll run
+### 8. Payroll run — BUILT (Payroll → Payroll Runs, skill `payroll-run`)
+
+Built 2026-10-09: Draft (regenerate) → Approved (deduction payments posted,
+retros Applied, filing off) | Cancelled; pay register and payslips with how
+each line was computed; holiday pay / holiday OT rates from the premium
+table. Tested on real BioBridge data for employee 23363 and with holiday
+scenarios (monthly / daily-paid, worked / unworked, prior-day rule).
+Sample left: 2026-08-B Approved, 2026-09-A Cancelled, 2026-10-A Draft.
+The original brief:
 
 Reads: `CompensationService::rateOn()`, Payroll Settings + premium rates
 (snapshot them per run), the DTR (phase 5), `AllowanceService::forPeriod()`,
@@ -199,15 +228,125 @@ cut-off (mark Applied). Daily rate = monthly × 12 ÷ the daily-rate factor.
 
 Per cut-off: gross pay (rate on date, DTR, OT, holiday pay, allowances), minus contributions, tax, deductions and loans, giving net pay. Then review, approve or lock, with no edits after the lock except by an adjustment.
 
-### 9. Payslips and reports
+### 9. Payslips and reports — BUILT (skill `payroll-run`)
 
-Payslips that employees can view, a payroll register, bank or remittance files, and government reports.
+Built 2026-10-09: printable payslip (Payroll Run → payslip → Print), My
+Payslips (user menu, own approved payslips only), Payroll Register (Excel,
+with a By Branch sheet) and Bank File (preview + CSV once approved) on the
+payroll run page, payroll bank account on the Contribution Profile,
+employer details in Payroll Settings.
 
-### 10. Compliance and year-end (agreed 2026-10-08, after 9)
+### 10. Compliance and year-end — BUILT (Payroll → Reports & Compliance)
 
-Monthly remittances (SSS R-3 / contribution list, PhilHealth RF-1,
-Pag-IBIG MCRF, BIR 1601-C), 13th-month pay (by Dec 24), tax annualization,
-BIR 2316 and alphalist, final pay with leave conversion (within 30 days).
+Built 2026-10-09: Remittances (month — SSS / PhilHealth / Pag-IBIG EE + ER
++ EC and BIR 1601-C per employee, Excel workbook), 13th Month Pay (PD 851,
+Draft → Submit → the "13th Month Pay" Access Chart, same rules as the
+payroll run → Approved | back to Draft; Cancel a Draft; register and bank
+file), Year-end Tax (annualization from the BIR monthly table × 12,
+₱90k benefits exemption, alphalist Excel, printable BIR 2316 data), Final
+Pay (unpaid days per cut-off, pro-rated 13th month, SIL / VL conversion,
+this month's contributions, loan balances, tax true-up; printable with the
+2316 — a computation only, posts nothing). The 2316 / alphalist are data
+layouts to transfer onto the BIR forms / eAlphalist, not the official forms.
+Local: the 2026 13th month was approved from the page (before the chart existed).
+
+7. **Payroll processing** (2026-10-09), migrations by path:
+   `2026_10_12_100000` (cut-off rules on payroll_settings),
+   `2026_10_12_110000/110100` (payroll runs). Then `composer dump-autoload`,
+   PermissionSeeder (`dtr-list`, `payroll-run-list/-generate/-approve/-cancel`
+   — grant to the payroll roles), set Payroll Settings → Cut-offs & Pay Days,
+   enter the year's holidays in the Holiday Calendar (local 2026 holidays are
+   samples), then Generate Year with "update pay dates".
+   Payroll approval: migrate `2026_10_12_120000`, run
+   `PayrollRunApprovalProcedureSeeder`, then on Access Charts set "Payroll
+   Run" levels / required approvals / approvers and give them the "Payroll
+   Approver" role (local: level 1, 2 approvals, Lady Rose Lutrania + Marilou
+   Baltazar). Includes a fix to AccessChartController (adding a level to an
+   existing chart crashed: the new row has no id).
+8. **Payslips, reports and year-end** (2026-10-09), migrations by path:
+   `2026_10_13_100000` (bank account on contribution profiles),
+   `2026_10_13_110000` (13th-month runs / pays), `2026_10_13_120000`
+   (employer details on payroll_settings), `2026_10_13_130000` (13th-month
+   approval). Then `composer dump-autoload`, PermissionSeeder,
+   `ThirteenthMonthApprovalProcedureSeeder` (the "13th Month Pay" Access
+   Chart, copying the Payroll Run chart's levels / approvers when new; the
+   "Payroll Approver" role gets thirteenth-month-list / -approve), and grant
+   `payroll-report-view`, `final-pay-view`, `thirteenth-month-list /
+   -generate / -approve / -cancel` to the payroll roles (My Payslips needs no
+   permission — the account must be linked to its employee). Fill Payroll
+   Settings → Employer and each employee's payroll bank account before the
+   first bank file.
+
+## Payroll requests 2026-10-09 (phases 11–15)
+
+These were requested on 2026-10-09. Some of the request already existed, so it is not rebuilt:
+- **Allowance taxable / non-taxable:** the Allowance Type's Taxable switch and its de minimis limit.
+- **Salary import with an effective date:** Salary History → Generate Template / Import.
+- **Holiday and holiday OT rates:** Payroll Settings → Premium Rates, one row per day type.
+
+Decisions (all taken from the user's answers):
+
+### 11. Default shift / work schedule per company, branch and position — BUILT (Time & Leave → Schedule → Default Schedules)
+Default rules, not a bulk copy:
+- A company, branch or position gets a default shift (pattern) or work schedule.
+- Every employee follows it automatically, including new hires and transfers, unless they have their own assignment.
+- The most specific rule wins: the employee's own shift assignment, then the employee's work schedule, then the position default, then the branch default, then the company default, otherwise No Schedule.
+- Both the DTR and the Shift Management views read the resolved schedule.
+
+### 12. Payroll rollback / partial regenerate — BUILT (payroll run page: Generate Selected, Roll Back to Draft)
+- **Draft:** regenerate only the employees you select, or all of them.
+- **Approved:** roll it back to Draft. This needs a reason and its own permission, and it is refused while an approved 13th month for that year exists. After a rollback the payroll goes through approval again.
+- Both actions are logged.
+
+### 13. Attendance log import — BUILT (Timekeeping → Attendance Template / Import Attendance)
+- Time-in/out rows are imported (Generate Template → Import) into an HRIS table.
+- The DTR merges them with the BioBridge punches. A date that has imported punches uses them instead of that date's BioBridge punches; other dates keep BioBridge.
+- Re-importing an employee's day replaces that day's imported rows.
+- This covers any employee or branch without BioBridge.
+
+### 14. Contribution history per employee — BACKEND BUILT, React page TO DO
+- For a date range: SSS, PhilHealth and Pag-IBIG (EE / ER / EC) and tax, per employee per cut-off, with totals.
+- An Excel report.
+- Approved payrolls only.
+
+### 15. Pay sheet and payslips by date range — BACKEND BUILT, React page TO DO
+- **Pay sheet:** a date or cut-off range of approved payrolls, per employee, with subtotals by branch, company and position. Shown on screen and as Excel.
+- **Batch payslip printing:** for a range and filter.
+
+### Continue here (next session, 2026-10-09 hand-off)
+
+Phases 11–15 are committed and pushed: vueportal `F-HRIS-Staging`, reactjs-ant-design `master`.
+
+**Tested:**
+- 11–13: backend in tinker (rolled-back transactions) and HTTP; UI in headless Edge.
+- 14–15: backend over HTTP, plus both Excel downloads.
+
+Test records were deleted. The test token was revoked.
+
+**Still to do:**
+1. **Phase 14 React page** — Payroll → Reports & Compliance → "Contribution History":
+   - Filters: date range, or a cut-off range (send the first cut-off's date_from and the last one's date_to); company / branch / position; employees.
+   - Table: one row per employee (SSS EE/ER/EC, PhilHealth EE/ER, Pag-IBIG EE/voluntary/ER, tax, EE / ER totals), expandable per cut-off (shared ExpandIcon). Totals row; Download Excel.
+   - API is ready: `payrollReportApi.contributionHistory` / `contributionHistoryDownload`.
+2. **Phase 15 React page** — "Pay Sheet":
+   - Same filters; tabs By Employee / By Company / By Branch / By Position / By Cut-off; Download Excel.
+   - "Print Payslips": `payrollReportApi.payslips` → join `payslipHtml(p.payslip, p.run, employer)` with a page break between payslips → `printDocument`.
+   - API is ready: `paySheet` / `paySheetDownload` / `payslips`.
+3. Add both pages to `AppRoutes.jsx` and to the MainLayout "Reports & Compliance" group (permission `payroll-report-view`), plus page titles.
+4. Run `/review-code` and `/test-workflow` for phases 11–15.
+5. Document phases 14–15 in the payroll-run skill (`reactjs-ant-design/.claude/skills/payroll-run/SKILL.md`).
+6. **Known limits to tell the user:**
+   - Groups, reports and pay sheet subtotals use the employee's **current** branch / position (payslips keep no branch).
+   - Rollback leaves the cut-off's filing closed.
+   - The Audit Trail now also lists Payroll Run, Default Schedule and Attendance Log Import records.
+7. **Older offers still open:** remittance payment log; future approved leave shows as Upcoming instead of On Leave in the DTR.
+
+**Deploy (production), after step 8 above** — migrations by path:
+- `2026_10_14_100000` (group_schedules)
+- `2026_10_14_110000` (payroll run rollback)
+- `2026_10_14_120000` (attendance_logs)
+
+Then run PermissionSeeder (new: `group-schedule-list/-create/-edit/-cancel`, `payroll-run-rollback`, `attendance-log-template-download`, `attendance-log-import`) and grant those permissions to the HR / payroll roles.
 
 ## To fix / follow up on the new features (2026-10-08)
 
@@ -216,33 +355,37 @@ Found while building payroll records; none is applied yet.
   Pag-IBIG / BIR tables (`ContributionTableSeeder`), DOLE premium rates
   (`PayrollSettingSeeder`) and the de minimis limits (RR 11-2018 values —
   check the latest BIR regulation).
-- **Sample cut-offs pay dates:** the 2026 cut-offs generated locally pay 5
-  days after the period end; the user pays on the 15th and the end of the
-  month — fix with the configurable generator (phase 3).
-- **Overtime chart has no approvers** locally (and `ApproversFromMrfSeeder`
-  found no "MRF - Additional" chart, so Leave / Time Entry charts have no
-  levels either) — anyone with `*-approve` decides in one step until set.
+- Done 2026-10-09: local 2026 cut-off pay dates re-applied (phase 3); the
+  Overtime chart got Manual Time Entry's 16 officers (same levels) and the
+  "Overtime Approver" role; the DTR reclassifies overtime day types; the
+  payroll run snapshots Payroll Settings and premium rates.
 - **Not tested in a browser:** menu search, shift chip, My Profile record
-  tabs, every payroll page, Overtime. Run `/review-code` and
-  `/test-workflow` on them before production.
+  tabs, and the payroll pages' add / edit forms. Run `/review-code` and
+  `/test-workflow` on them before production. Browser-tested 2026-10-09:
+  the viewers (Leave / Time Entry / Overtime / Retro details, Shifting and
+  cut-off Filing History, Audit Trail), the Contributions compute modal and
+  the contribution table import.
 - **No module skills yet** for Contributions, Deductions, Retro,
   Allowances, Payroll Settings, Overtime (both repos) — the api files hold
   the contracts; write skills when the payroll run starts.
-- **Template / Import** not built for allowances, deductions,
-  contributions (Salary History has one); **Weekly** allowance basis and
-  **one-time deductions** not built.
+- **Template / Import** not built for allowances, deductions and
+  contribution profiles (Salary History and contribution tables have one);
+  **Weekly** allowance basis and **one-time deductions** not built.
 - **Daily-rate employees:** the contribution preview needs the month's
   actual earnings typed in; daily retro counts scheduled work days (not
-  attendance) — the DTR should replace both.
-- **Overtime `day_type`** is stored when filed; the DTR must reclassify
-  (schedule / holidays can change).
-- **Payroll Settings and premium rates are not effective-dated** — the
-  payroll run must snapshot them per run.
+  attendance) — switch both to the DTR.
+- **Daily-paid contributions:** when the month's earlier cut-off has no
+  payroll run, the month base uses only this cut-off's earnings (projected).
 - **My Profile Attendance tab** stays hidden for employees without
   `employee-master-data-attendance` (its endpoint needs it); add self-access
   if employees should see their own logs.
 - **Pre-existing lint errors** in `MainLayout.jsx` (unused `Divider`,
   `Title`).
+- **Reports (phases 9–10):** check the bank file layout against the payroll
+  bank's own upload format (generic CSV now: account no., name, amount,
+  code, bank, credit date); an account number opened in Excel loses leading
+  zeros (upload the CSV as-is). Daily-paid 13th month is earned-only (no
+  projection). Final pay doesn't mark loans paid or post anything.
 
 ### Later (agreed, not scheduled)
 
@@ -252,14 +395,14 @@ Found while building payroll records; none is applied yet.
 
 ## Open questions to ask the user
 
-- Restore level 2 approval on the Leave and Manual Time Entry access charts? Someone removed it locally and added user "Bhem" at level 1.
+- Restore level 2 approval on the Leave and Manual Time Entry access charts? Someone removed it locally and added user "Bhem" at level 1. The level-2 approver mappings are still there, and one leave (#34) and one time entry are still Pending at level 2 — their Approval Route no longer shows that level.
 - Should only HR cancel an already-approved leave or time entry?
 - Should manual time-entry filing be limited to the filer's subordinates?
 - Should leave reasons and remarks stay visible to every `activity-logs` holder in the Audit Trail?
 - Hiring Officer eligibility: also Branch Managers / Top Management, or only ADMINISTRATION + Managerial?
 - Known bug, fix offered but not applied: `employeeApi.delete` sends `{ids}` while the backend reads `employee_id`.
 - Which roles get the payroll permissions (`compensation-*`, `allowance-*`, `deduction-*`, `retro-*`, `contribution-*`, `payroll-setting-*`, `overtime-*`)?
-- Production's permission guard (`web` or `api`)? Local is `api` (matches `User::$guard_name`).
+- Production's permission guard (`web` or `api`)? Local roles / permissions are all `web` (checked 2026-10-09), but the **committed** `User::$guard_name` is `"api"` — only an uncommitted local edit makes it `"web"`. Decide which is right before deploying; a mismatch breaks every permission check.
 - Daily-rate factor: default 313 (6-day week) — confirm 261 / 313 / 365.
 - Statutory deduction schedule defaults OK (SSS / PhilHealth / Pag-IBIG on the 2nd cut-off, tax every cut-off)?
 - Overtime: minimum minutes, OT before the shift, rounding?
