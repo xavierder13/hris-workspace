@@ -7,7 +7,7 @@ detail goes in the commit and the module's skill) and update
 re-ask them. Open questions are listed separately; ask those before
 building the phase they affect.
 
-## Where things stand (2026-10-08)
+## Where things stand (2026-10-09)
 
 Built and pushed. vueportal is on `F-HRIS-Staging`; reactjs-ant-design and this workspace are on `master`.
 - **Leave:** types, applications with approval, balances and credits.
@@ -304,12 +304,12 @@ Default rules, not a bulk copy:
 - Re-importing an employee's day replaces that day's imported rows.
 - This covers any employee or branch without BioBridge.
 
-### 14. Contribution history per employee — BACKEND BUILT, React page TO DO
+### 14. Contribution history per employee — BUILT (Reports & Compliance → Contribution History; Contributions → History)
 - For a date range: SSS, PhilHealth and Pag-IBIG (EE / ER / EC) and tax, per employee per cut-off, with totals.
 - An Excel report.
 - Approved payrolls only.
 
-### 15. Pay sheet and payslips by date range — BACKEND BUILT, React page TO DO
+### 15. Pay sheet and payslips by date range — BUILT (Reports & Compliance → Pay Sheet, Print Payslips)
 - **Pay sheet:** a date or cut-off range of approved payrolls, per employee, with subtotals by branch, company and position. Shown on screen and as Excel.
 - **Batch payslip printing:** for a range and filter.
 
@@ -323,51 +323,31 @@ Phases 11–15 are committed and pushed: vueportal `F-HRIS-Staging`, reactjs-ant
 
 Test records were deleted. The test token was revoked.
 
+**Done 2026-10-09 (this device):** per-employee rollback React screens
+(lock tag, Roll Back Selected / All, approved rows out of Generate
+Selected, All / Selected employees on Generate Payroll), the Contribution
+History and Pay Sheet pages, the Contributions History modal, routes / menu,
+and the payroll-run skill. Browser-tested in headless Chrome (15 checks) and
+over HTTP (partial rollback, approved row refused for generate / cancel).
+Deploy: migrate `2026_10_14_130000` after `110000`.
+
 **Still to do:**
-0. **Per-employee rollback + employee selection on the first generate.** The backend is built and tested (11 checks, rolled-back transaction); the React screens are TO DO.
-   - **Model:** `payroll_run_employees.posted_at` (migration `2026_10_14_130000`; it backfills approved runs). A posted payslip is approved and locked.
-     - `PayrollRunEmployee::approved()` (posted and the run not Cancelled) is what reports, My Payslips, 13th month and final pay read. A payslip kept through a rollback stays visible.
-     - Approval (`finalize`) posts only unposted rows, so deduction payments are never duplicated.
-   - **Rollback:** `rollback(id, reason, employee_ids?)` (null = all). It removes those employees' Payroll deduction payments for the cut-off, reopens their retros and unposts them.
-     - The run goes back to Draft (submit and approve again); the other employees stay approved.
-     - It works on an Approved run, or a Draft that still has approved payslips.
-   - **Generate:**
-     - `employee_ids` now also works on a cut-off with no run yet (a run with just those employees).
-     - Approved (posted) employees are never recomputed: selecting one is refused, and Regenerate All skips them.
-     - With posted rows kept, a Payroll Settings or premium-rate change blocks generating.
-     - Cancel is refused while posted rows remain.
-   - **New endpoint:** `payroll_run/cutoff_candidates/{cutoffId}` — eligible employees for a cut-off; `candidates` rows now carry `approved`. `show` employees carry `approved`.
-   - **React TO DO:**
-     - `PayrollRunPage`: on Approved, or on a Draft with approved rows, allow ticking approved rows. "Roll Back Selected" / "Roll Back All" send `employee_ids` (`payrollRunApi.rollback(id, reason)` needs an `employeeIds` argument). Show an "Approved" tag (locked) on posted rows and keep them out of Generate Selected.
-     - `RegenerateEmployeesModal`: disable the `approved` options.
-     - `PayrollRunIndex` generate modal: an "All employees / Selected employees" choice, using `cutoff_candidates`, sending `employee_ids`.
-     - Update the payroll-run skill's "Generate selected / roll back" section to this model.
-   - **Deploy:** migrate `2026_10_14_130000` after `110000`.
-1. **Phase 14 React page** — Payroll → Reports & Compliance → "Contribution History":
-   - Filters: date range, or a cut-off range (send the first cut-off's date_from and the last one's date_to); company / branch / position; employees.
-   - Table: one row per employee (SSS EE/ER/EC, PhilHealth EE/ER, Pag-IBIG EE/voluntary/ER, tax, EE / ER totals), expandable per cut-off (shared ExpandIcon). Totals row; Download Excel.
-   - API is ready: `payrollReportApi.contributionHistory` / `contributionHistoryDownload`.
-   - **Also a per-employee "History" modal** on Payroll → Contributions:
-     - A row action next to the existing compute preview (`ContributionComputeModal` only previews a date's computed monthly contributions; it shows no past deductions).
-     - It shows that employee's actual deductions per cut-off from approved payslips, with a totals row.
-     - It has a date range (default this year) and Download Excel.
-     - Same endpoint with `employee_ids: [id]`.
-2. **Phase 15 React page** — "Pay Sheet":
-   - Same filters; tabs By Employee / By Company / By Branch / By Position / By Cut-off; Download Excel.
-   - "Print Payslips": `payrollReportApi.payslips` → join `payslipHtml(p.payslip, p.run, employer)` with a page break between payslips → `printDocument`.
-   - API is ready: `paySheet` / `paySheetDownload` / `payslips`.
-3. Add both pages to `AppRoutes.jsx` and to the MainLayout "Reports & Compliance" group (permission `payroll-report-view`), plus page titles.
-4. Run `/review-code` and `/test-workflow` for phases 11–15 and the per-employee rollback.
-5. Document phases 14–15 in the payroll-run skill (`reactjs-ant-design/.claude/skills/payroll-run/SKILL.md`).
-6. **Known limits to tell the user:**
+1. Run `/review-code` and `/test-workflow` for phases 11–15 and the per-employee rollback (not done this session — the browser check above was a smoke test, not a full workflow test).
+2. **Known limits to tell the user:**
    - Groups, reports and pay sheet subtotals use the employee's **current** branch / position (payslips keep no branch).
    - Rollback leaves the cut-off's filing closed.
    - The Audit Trail now also lists Payroll Run, Default Schedule and Attendance Log Import records.
-7. **Fixes / checks found:**
+3. **Fixes / checks found:**
    - Local run 17 (2026-10-B, Draft) was made by someone else — leave it, or ask.
    - The Salary import's "same employee on line N" message numbers rows differently from the error list's Excel Row (pre-existing; the attendance import uses the Excel row).
    - The ActivityLogController description filter only allows created / updated / deleted, so the 'imported' entries can't be filtered by action.
-8. **Older offers still open:** remittance payment log; future approved leave shows as Upcoming instead of On Leave in the DTR.
+4. **Older offers still open:** remittance payment log; future approved leave shows as Upcoming instead of On Leave in the DTR.
+
+**Local test data (this device, 2026-10-09)** — for payroll testing, all marked TEST:
+- Xavier De Guzman (2191): 41 approved manual time entries, Aug–Sep 2026 work days (reason "TEST data — …"); 5 approved overtimes (08/12, 08/26, 09/10, 09/19 rest day, 09/23 night diff).
+- His setup: allowances Rice ₱2,000 / month, Transpo ₱1,500 / cut-off, Meal ₱100 / day worked (from 08/01); deductions TEST-SSS-SL-001 (₱1,000 every cut-off) and TEST-HDMF-MPL-001 (₱500 on the 2nd cut-off); contribution profile with a TEST bank account and ₱200 Pag-IBIG voluntary; Payroll Settings employer = "TEST Employer Corp.".
+- Payroll runs: 2026-08-A, 08-B, 09-A Approved (filing off); 2026-09-B Draft (it was used for the rollback test).
+- The "Payroll Run" Access Chart has no levels here, so payroll-run-approve decides in one step.
 
 **Deploy (production), after step 8 above** — migrations by path:
 - `2026_10_14_100000` (group_schedules)
@@ -375,7 +355,7 @@ Test records were deleted. The test token was revoked.
 - `2026_10_14_120000` (attendance_logs)
 - `2026_10_14_130000` (payslip posted_at; backfills approved runs)
 
-Then run PermissionSeeder (new: `group-schedule-list/-create/-edit/-cancel`, `payroll-run-rollback`, `attendance-log-template-download`, `attendance-log-import`) and grant those permissions to the HR / payroll roles.
+Then run PermissionSeeder (new: `group-schedule-list/-create/-edit/-cancel`, `payroll-run-rollback`, `attendance-log-template-download`, `attendance-log-import`) and grant those permissions to the HR / payroll roles. Deploy vueportal `3bc1319` (Roles / Permissions guard fix) with it.
 
 ## To fix / follow up on the new features (2026-10-08)
 
@@ -431,7 +411,7 @@ Found while building payroll records; none is applied yet.
 - Hiring Officer eligibility: also Branch Managers / Top Management, or only ADMINISTRATION + Managerial?
 - Known bug, fix offered but not applied: `employeeApi.delete` sends `{ids}` while the backend reads `employee_id`.
 - Which roles get the payroll permissions (`compensation-*`, `allowance-*`, `deduction-*`, `retro-*`, `contribution-*`, `payroll-setting-*`, `overtime-*`)?
-- Production's permission guard (`web` or `api`)? Local roles / permissions are all `web` (checked 2026-10-09), but the **committed** `User::$guard_name` is `"api"` — only an uncommitted local edit makes it `"web"`. Decide which is right before deploying; a mismatch breaks every permission check.
+- Production's permission guard: the committed `User::$guard_name` is `"api"`, so roles and permissions must be `api` (`SELECT guard_name, COUNT(*) FROM roles GROUP BY 1` before seeding). This device's DB is all `api`; the other device's local DB was `web` with an uncommitted User edit — convert that DB rather than the code. Fixed 2026-10-09 (vueportal `3bc1319`): the Roles / Permissions pages hard-coded `'web'` on create, so a role made there couldn't get permissions or be assigned; they now use the User model's guard.
 - Daily-rate factor: default 313 (6-day week) — confirm 261 / 313 / 365.
 - Statutory deduction schedule defaults OK (SSS / PhilHealth / Pag-IBIG on the 2nd cut-off, tax every cut-off)?
 - Overtime: minimum minutes, OT before the shift, rounding?
