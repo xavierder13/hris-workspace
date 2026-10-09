@@ -332,7 +332,11 @@ over HTTP (partial rollback, approved row refused for generate / cancel).
 Deploy: migrate `2026_10_14_130000` after `110000`.
 
 **Still to do:**
-1. Fix the defects from the 2026-10-09 end-to-end review (`test-results/2026-10-09-payroll-end-to-end.md`, local to this device): cancel inside an approved cut-off (D1), Pending run not frozen (D2), silent BioBridge outage (D3), cut-off approval order (D4), Administrator approve text (D5). Ask the user which to fix first.
+1. End-to-end review defects (2026-10-09):
+   - Fixed: a paid leave / time entry / overtime can't be cancelled (vueportal `2202a4a`, React `74f68e9`) — corrections go through Retro.
+   - Not applicable on this device: BioBridge (MSSQL) isn't reachable here; payroll tests use manual time entries / imported attendance logs instead.
+   - Waiting for the user: freeze a Pending payroll (close filing on submit vs. a "changed since generated" warning); refuse approving a cut-off while an earlier one of the same month is Draft / Pending.
+   - Small fixes not yet applied: Administrator approve text ("still needs 1 more"), loans numbering a month's cut-offs by start date vs. contributions by end date, approval error that names no employee when a loan changed after generating.
 2. **Known limits to tell the user:**
    - Groups, reports and pay sheet subtotals use the employee's **current** branch / position (payslips keep no branch).
    - Rollback leaves the cut-off's filing closed.
