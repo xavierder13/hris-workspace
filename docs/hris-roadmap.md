@@ -335,7 +335,10 @@ Deploy: migrate `2026_10_14_130000` after `110000`.
 1. End-to-end review defects (2026-10-09):
    - Fixed: a leave / time entry / overtime paid by an approved payroll, or inside a payroll waiting for approval, can't be cancelled except by an Administrator (user decision 2026-10-09: Administrator can do everything); paid ones are corrected through Retro. Submitting a payroll turns its cut-off's filing off (user decision: the period is locked while waiting for approval); a disapproval turns it back on only if the submit did. Also fixed: Administrator approve text, loans numbering a month's cut-offs like contributions, and the approval error naming the employee when a loan changed. vueportal `2202a4a`, `c4ba0e8`; React `74f68e9`, `16d2c70`.
    - Not applicable on this device: BioBridge (MSSQL) isn't reachable here; payroll tests use manual time entries / imported attendance logs.
-   - Waiting for the user: refuse approving a cut-off while an earlier one of the same month is Draft / Pending?
+   - Done (user decision 2026-10-09): a month's payrolls are approved in order — submit / approve refused while an earlier cut-off of the month is Draft / Pending; generating refused while a later one is Pending / Approved (vueportal `22a7dbe`).
+   - User decision 2026-10-09: salary / pay visibility stays permission-based (payroll-run-list / payroll-report-view show pay).
+   - Payroll Run / 13th Month approvers: Lady Rose Lutrania + Marilou Baltazar are mapped at level 1 (2 required) on this device too, but neither has the "Payroll Approver" role (payroll-run-approve) — assign it, or they get 401.
+   - Proposed, waiting for the user: leave vs. time entry / overtime on the same day rules; payroll role set (Payroll Officer / Payroll Manager / Timekeeper / Employee Self-Service + the existing approver roles).
 2. **Known limits to tell the user:**
    - Groups, reports and pay sheet subtotals use the employee's **current** branch / position (payslips keep no branch).
    - Rollback leaves the cut-off's filing closed.
