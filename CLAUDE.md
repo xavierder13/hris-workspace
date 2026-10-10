@@ -24,7 +24,8 @@ verify a claim against the repository before relying on it.
 `docs/hris-roadmap.md` holds the agreed next phases (up to payroll), the
 user's decisions for each, pending production deploy steps and open
 questions. Read it before starting HRIS feature work, and keep it current
-when a phase ships.
+when a phase ships. `/roadmap` gives a read-only heads-up of it (what's left,
+decisions waiting on the user, repo / deploy state, suggested next item).
 
 ## Repository boundaries
 
