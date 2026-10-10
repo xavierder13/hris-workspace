@@ -75,6 +75,89 @@ Module rules live in each repo's skills:
    `retro-*`, `overtime-*`. Set the levels and approvers of the new
    "Overtime" Access Chart.
 
+## Pick up here — left to do (saved 2026-10-10)
+
+Everything built so far is pushed (vueportal `5f19b4d` on `F-HRIS-Staging`,
+React `1447c61`, workspace `master`). In order of what the user raised:
+
+### A. Recruitment data gateway — user's concern, agreed design, NOT built
+**Problem:** recruitment access is checked twice — vueportal `careers-*`
+permission, then the careers portal again: `RecruitmentGatewayController::actAs()`
+(recruitment-portal) looks up `user_email` among the portal's own users and
+403s without one ("No careers portal account for …"). So an HRIS user with
+no portal account (e.g. xadeguzman@admin.ac) is blocked — also against the
+"Administrator can do everything" rule. The portal user only matters for
+the second permission check and Branch Manager scoping (`hasRole('Branch
+Manager')` + `branch_id` in `ApplicantController`); the portal has no audit
+of who did what.
+
+**Agreed recommendation (user asked to build later, after confirming):**
+1. vueportal decides permissions; the gateway stops re-checking portal
+   permissions. Gateway acts as: the matching portal user when one exists
+   (keeps Branch Manager rules) → else the service account (full scope) for
+   HRIS users who are not branch-scoped → refused for a branch-scoped HRIS
+   user with no portal account. vueportal sends `scope: all | branch` from
+   the HRIS role (`Branch Manager` role exists in vueportal).
+2. Role mismatch closes, never widens: HRIS says Branch Manager but the
+   portal account isn't → refuse with a message; portal account is a
+   Branch Manager → branch rules always apply.
+3. Lock the gateway to vueportal's service account (dedicated id / role)
+   — today the portal's `RecruitmentMaintenance` lets ANY portal
+   Administrator token call it with any `user_email` (impersonation).
+4. Log recruitment changes in vueportal's activity log (HRIS user, action,
+   applicant id) — the Audit Trail.
+5. Later, optional: auto-create a portal account when an HRIS user gets a
+   Branch Manager recruitment role, or send the branch from vueportal —
+   first confirm vueportal and portal branch ids match (not verified).
+Files: recruitment-portal `RecruitmentGatewayController::actAs`,
+`app/Http/Middleware/RecruitmentMaintenance.php`; vueportal
+`RecruitmentController::gatewayRequest` (+ logging). Workaround meanwhile:
+create a portal account with the same email and `jobapplicants-*`.
+
+### B. Before production
+- Run the deploy steps above (migrations by path in order, then
+  PermissionSeeder → PayrollRoleSeeder; payroll roles' grants — ask which
+  roles; Access Chart approvers; Payroll Settings → Employer, bank accounts).
+- `/review-code` on 2026-10-09/10 work (payroll record imports, retro
+  Adjustment For, deduction descriptions, notification bell, self-service,
+  layout) — tested, not code-reviewed.
+- Browser-test the forms never clicked through: Salary History add / edit /
+  delete, payroll records add / edit forms.
+- Verify seeded values against current rules: SSS / PhilHealth / Pag-IBIG /
+  BIR tables, DOLE premium rates (e.g. Regular Holiday on Rest Day 260% /
+  338%, ND 10%), de minimis limits.
+- Sidebar / navbar redesign (in `1447c61`): user was to check it — if not
+  kept, revert only the design (`src/layouts/sidebar.css`, `navbar.css`
+  and the sidebar / header markup in `MainLayout.jsx`), keep the menu
+  regrouping and My Workspace.
+- Note: a DTR / My Attendance load takes ~60 s on a device where BioBridge
+  (MSSQL) isn't reachable (connect timeout); fine where it is.
+
+### C. Still to fix / build (details in "To fix" and "Continue here" below)
+- Daily-rate employees: contribution preview and daily retro from the DTR
+  (now typed earnings / scheduled days); daily-paid month projection.
+- Bank file vs. the bank's own upload format; Final Pay posts nothing.
+- Salary import's "same employee on line N" numbering (attendance / new
+  imports use the Excel row); Audit Trail can't filter 'imported'.
+- `employeeApi.delete` sends `{ids}` but the backend reads `employee_id`
+  (fix offered, not applied).
+- Future approved leave shows Upcoming instead of On Leave in the DTR;
+  remittance payment log (offered).
+- Pre-existing lint errors in `MainLayout.jsx` (unused `Divider`, `Title`).
+- Offered, not run: simulate "rest day + holiday + overtime to 10 pm" in a
+  rolled-back payroll calc to show the payslip lines.
+
+### D. Device housekeeping (the device with ~/projects)
+The older clones `~/projects/vueportal` / `~/projects/reactjs-ant-design`
+were wrongly synced on 2026-10-10 (the working repos are inside this
+workspace). User's edits are safe in `stash@{0}` of each. To restore:
+`cd ~/projects/vueportal && git checkout master && git branch -f F-HRIS-Staging a48ecda && git stash pop`;
+`cd ~/projects/reactjs-ant-design && git reset --keep b26672f && git stash pop`.
+
+### E. Later (agreed, not scheduled) and open questions
+See "Later" (news posting, Company Asset port, KPI template versioning) and
+"Open questions to ask the user" at the end.
+
 ## Next phases, in order
 
 Every phase follows the same pattern as Leave and Manual Time Entries:
