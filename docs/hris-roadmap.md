@@ -78,10 +78,31 @@ Module rules live in each repo's skills:
 
 ## Pick up here — left to do (saved 2026-10-11)
 
-Everything built so far is pushed (vueportal `8a3f07f` on `F-HRIS-Staging`,
-React `2e2ffd3`, workspace `master`). The user manual (Claude Docs, link in
-"Continue here") covers the bank accounts, picker and attendance import, and
-lists "Not available yet". In order of what the user raised:
+Everything built so far is pushed (vueportal `5a54298` on `F-HRIS-Staging` —
+master merged in; React `d122d41`; workspace `master`). The user manual
+(Claude Docs, link in "Continue here") covers bank accounts, the picker,
+attendance import, session expiry and persistent dialogs, and lists "Not
+available yet".
+
+### Next up, in order (suggested)
+1. **Remaining review findings (section C):** the cancel-own race, the
+   bell's per-user caching, Generate Template's branch / position options
+   for payroll-only roles — no decision needed; `/review-code` after.
+2. **Decisions from the user** (each unblocks a build): negative net pay —
+   warn, block on submit, or carry over; which banks pay payroll (upload
+   formats); My Payslips default range; payroll roles' grants; more than one
+   employer company; restore level 2 on the Leave / Time Entry charts
+   (open questions at the end).
+3. **Browser test pass** on a device with Edge + puppeteer (vueportal
+   CLAUDE.md): the 2026-10-11 pages, session expiry, persistent dialogs,
+   the sidebar redesign check (section B).
+4. **Verify seeded government tables and premium rates** (section B).
+5. **Recruitment data gateway (A)** — agreed design; build once the user
+   confirms.
+6. **Production deploy** — the steps at the top, in order, after 1–4.
+7. Then the LOW items and "Other" in section C, and section E.
+
+In order of what the user raised:
 
 ### A. Recruitment data gateway — user's concern, agreed design, NOT built
 **Problem:** recruitment access is checked twice — vueportal `careers-*`
@@ -145,13 +166,8 @@ create a portal account with the same email and `jobapplicants-*`.
   is only logged — the payroll is computed without its punches, no notice.
 
 ### C. Still to fix / build (details in "To fix" and "Continue here" below)
-Code review of the 2026-10-09/10 work (2026-10-11, report-only, not fixed):
-- FIXED 2026-10-11 (vueportal, see its log) — was HIGH: vueportal `overtime/preview`, the time-entry preview and
-  `leave/compute` return another employee's schedule / punches / leave
-  balance to a `*-own` holder: `FilingAccess::assertPreview`'s exception is
-  only stored in `$error` and the data is still returned
-  (`EmployeeOvertimeController.php:119-128`, confirmed). Fix: check first,
-  return 403/422 with the message only.
+Code review of the 2026-10-09/10 work (2026-10-11):
+- Done: HIGH preview data leak fixed (vueportal `5a54298`).
 - MEDIUM (suspected) — cancel-own checks "Pending" on a row read before the
   service lock; an approve at the same moment could let the owner cancel an
   approved filing. Re-check inside the locked transaction.
@@ -205,11 +221,9 @@ Other:
   lower `IDLE_TIMEOUT_MS` / `IDLE_TIMEOUT_MINUTES` locally), the cross-tab
   sync (one busy tab keeps the other alive) and the /login reason; tested
   over HTTP only (backend: unseeded / passive / extend / logout).
-- `F-Auth-Session` itself was not merged (user chose the session commit
-  only): it is master minus 10 commits; merging master into
-  `F-HRIS-Staging` later meets 14 conflicts (HRIS files built on both —
-  Work Schedule, Workforce Dashboard, EmployeeMasterDataController,
-  routes/api.php, PermissionSeeder, Kernel, CLAUDE.md).
+- Done: master merged into `F-HRIS-Staging` (vueportal `e189161`, HRIS
+  unchanged — see the deploy note at the top); `F-Auth-Session` needs no
+  merge (its session commit is in, the rest is master).
 
 ### D. Device housekeeping (the device with ~/projects)
 The older clones `~/projects/vueportal` / `~/projects/reactjs-ant-design`
