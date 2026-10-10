@@ -201,6 +201,16 @@ Other:
 - Offered, not run: simulate "rest day + holiday + overtime to 10 pm" in a
   rolled-back payroll calc to show the payslip lines.
 
+- Session expiry: browser-test the React and Vue idle logout (30 min — or
+  lower `IDLE_TIMEOUT_MS` / `IDLE_TIMEOUT_MINUTES` locally), the cross-tab
+  sync (one busy tab keeps the other alive) and the /login reason; tested
+  over HTTP only (backend: unseeded / passive / extend / logout).
+- `F-Auth-Session` itself was not merged (user chose the session commit
+  only): it is master minus 10 commits; merging master into
+  `F-HRIS-Staging` later meets 14 conflicts (HRIS files built on both —
+  Work Schedule, Workforce Dashboard, EmployeeMasterDataController,
+  routes/api.php, PermissionSeeder, Kernel, CLAUDE.md).
+
 ### D. Device housekeeping (the device with ~/projects)
 The older clones `~/projects/vueportal` / `~/projects/reactjs-ant-design`
 were wrongly synced on 2026-10-10 (the working repos are inside this
@@ -534,6 +544,14 @@ allowance_type_id, other_specify, taxable on employee_retro_adjustments —
 existing retros default to taxable, as before). Then `2026_10_16_110000`
 (deduction_types.needs_description — turned on for code OTHER — and
 employee_deductions.description).
+
+Session expiry (2026-10-11, vueportal `18b5b94` cherry-picked from
+`F-Auth-Session` + `72c5b6c` + `27e7395`; React `d122d41`): no migration.
+Every token issued before the deploy has no idle window, so **everyone is
+logged out once** on their next request (401 "expired due to inactivity") —
+announce it. Run `npm run prod` for the Vue assets (Home.vue / app.js).
+`php artisan cache:clear` also ends every session (the windows live in the
+cache). Tokens now expire 8 h after login; idle 30 min.
 
 Bank accounts (2026-10-10): migrate `2026_10_17_100000` (banks), `100100`
 (employee_bank_accounts), `100200` (copies each Contribution Profile's bank
