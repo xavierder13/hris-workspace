@@ -545,6 +545,19 @@ existing retros default to taxable, as before). Then `2026_10_16_110000`
 (deduction_types.needs_description — turned on for code OTHER — and
 employee_deductions.description).
 
+master merged into F-HRIS-Staging (2026-10-11, vueportal `e189161`; HRIS
+kept as on staging — 744 routes unchanged, 90 HRIS API responses
+byte-identical before / after): at deploy also
+- `composer install` (master adds `simplesoftwareio/simple-qrcode`, IT
+  Asset) and `npm install` + `npm run prod` (master's Vue screens);
+- production `.env`: `WEBPORTAL_VUE_ROOT=/media/webportal/backup1/webportal-vue`
+  — the upload disk (MRF, employee files, NTE / disciplinary, offboarding,
+  credit) is now env-driven; unset = public/, so without it production
+  uploads would go to public/;
+- master's pending migrations (credit remarks / invoice details,
+  promodizer sales invoices, IT asset tables if not yet there) — by path,
+  as master's own deploy does; not run locally (5 pending in `new/`).
+
 Session expiry (2026-10-11, vueportal `18b5b94` cherry-picked from
 `F-Auth-Session` + `72c5b6c` + `27e7395`; React `d122d41`): no migration.
 Every token issued before the deploy has no idle window, so **everyone is
