@@ -123,7 +123,7 @@ create a portal account with the same email and `jobapplicants-*`.
   roles; Access Chart approvers; Payroll Settings → Employer and Payroll
   Accounts; check Banks named by the bank-account move).
 - Fix the 2026-10-11 code review findings (section C) before production —
-  at least the HIGH one.
+  the HIGH one is fixed; the MEDIUM ones remain.
 - Browser-test the forms never clicked through: Salary History add / edit /
   delete, payroll records add / edit forms, and the 2026-10-11 pages (Bank
   Accounts, Banks, Payroll Settings → Payroll Accounts, Bank File "Paid
@@ -146,7 +146,7 @@ create a portal account with the same email and `jobapplicants-*`.
 
 ### C. Still to fix / build (details in "To fix" and "Continue here" below)
 Code review of the 2026-10-09/10 work (2026-10-11, report-only, not fixed):
-- HIGH — vueportal `overtime/preview`, the time-entry preview and
+- FIXED 2026-10-11 (vueportal, see its log) — was HIGH: vueportal `overtime/preview`, the time-entry preview and
   `leave/compute` return another employee's schedule / punches / leave
   balance to a `*-own` holder: `FilingAccess::assertPreview`'s exception is
   only stored in `$error` and the data is still returned
