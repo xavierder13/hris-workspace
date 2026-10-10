@@ -79,7 +79,7 @@ Module rules live in each repo's skills:
 ## Pick up here — left to do (saved 2026-10-11)
 
 Everything built so far is pushed (vueportal `8a3f07f` on `F-HRIS-Staging`,
-React `bbed869`, workspace `master`). The user manual (Claude Docs, link in
+React `2e2ffd3`, workspace `master`). The user manual (Claude Docs, link in
 "Continue here") covers the bank accounts, picker and attendance import, and
 lists "Not available yet". In order of what the user raised:
 
@@ -129,7 +129,9 @@ create a portal account with the same email and `jobapplicants-*`.
   Accounts, Banks, Payroll Settings → Payroll Accounts, Bank File "Paid
   from", the Generate Payroll picker) — API-tested only (no headless browser
   on this device). 13th month paid-from: endpoint built, not exercised (no
-  13th month run locally).
+  13th month run locally). Also check the persistent modals / drawers (React
+  `2e2ffd3`: no outside-click / Esc close; the new X on the phone menu and
+  phone bell).
 - Verify seeded values against current rules: SSS / PhilHealth / Pag-IBIG /
   BIR tables, DOLE premium rates (e.g. Regular Holiday on Rest Day 260% /
   338%, ND 10%), de minimis limits.
