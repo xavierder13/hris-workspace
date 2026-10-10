@@ -7,7 +7,7 @@ detail goes in the commit and the module's skill) and update
 re-ask them. Open questions are listed separately; ask those before
 building the phase they affect.
 
-## Where things stand (2026-10-09)
+## Where things stand (2026-10-10)
 
 Built and pushed. vueportal is on `F-HRIS-Staging`; reactjs-ant-design and this workspace are on `master`.
 - **Leave:** types, applications with approval, balances and credits.
@@ -112,9 +112,11 @@ To design: pay basis (monthly or daily rate), and the rate on a given date for p
 Built: types (taxable / de minimis with limit per period, seeded with the
 common PH ones), employee allowances per cut-off / per month / per day
 worked, by effective dates (a Specific Period = a from–to range); no
-approval, audited, hidden from the trail without `allowance-list`. **Not
-built from the decision below:** a Weekly basis and Template / Import for
-bulk (see "To fix").
+approval, audited, hidden from the trail without `allowance-list`. Per
+week (× 52 ÷ 12 a month, split like per month) and Template / Import
+(2026-10-10: a new effective_from adds the allowance and ends the same type
+running then; same employee + type + effective_from updates it) are built
+too.
 
 Allowance types, plus employee allowances with effective dates and history. Separated by frequency:
 - **Daily:** paid per day worked, taken from DTR days.
@@ -206,7 +208,17 @@ scheduled deductions (total, per cut-off, start cut-off, every / 1st /
 by the run), hold / resume / cancel, Fully Paid when the balance is zero;
 `DeductionService::dueOn()` for the run. Retro adjustments (manual +
 suggested from back-dated Salary History) are built too
-(`RetroService`). **Not built:** one-time deductions, Template / Import.
+(`RetroService`). Built 2026-10-10: One-time deductions (the whole total
+on the start cut-off, carried until taken) and Template / Import (one line
+per deduction; same type + reference no. updates it; a line without one
+that matches a saved one's type, total and start cut-off is refused).
+Retro Other Adjustment now names what it is for (OT / holiday / night diff
+underpayment, allowance under- / overpayment, refund of over-deduction,
+Others (specify)), which fixes earning / deduction and whether it is taxed
+(before, every retro was taxable). A deduction type marked Needs Description
+(OTHER by default) requires a description on each deduction, shown on the
+payslip as "Other Deduction — …"; the import template has a description
+column.
 
 Backend controllers exist with no React pages: `EmployeeLoansController`, `EmployeePremiumsController`. Add recurring and one-time deductions and loan amortization per cut-off.
 
@@ -343,6 +355,7 @@ Deploy: migrate `2026_10_14_130000` after `110000`.
    - Done 2026-10-09/10 (user decision): own vs. others permissions — `leave-/time-entry-/overtime-create-own / -edit-own / -cancel-own` (own employee record only, cancel while Pending) beside the existing any-employee ones; `*-list` = own + filed + to approve, `*-list-all` = everyone. Employee Self-Service gets list + the -own ones. vueportal `dbcd323`, React `f89e949`.
    - Done: Payroll Officer given to Lady Rose Lutrania, Marilou Baltazar, Grace Mae Hidalgo (this device). Note: Lady Rose and Marilou are also the only Payroll Run approvers (2 required) — if one of them submits, she can't approve her own, so let Grace generate and submit.
    - Decided by Claude (user delegated, 2026-10-10): daily-rate factor stays 313; SSS / PhilHealth / Pag-IBIG on the 2nd cut-off, tax every cut-off; overtime minimum 30 min and rounded down per 15 min (Payroll Settings → Overtime, migration `2026_10_15_110000`; vueportal `f5322a4`, React `dd10845`); pre-shift overtime counts when approved.
+   - Done 2026-10-10 (vueportal `4b91fa0`/`506a31b`/`5f19b4d`, React `b9c1650`/`b0fa928`/`1447c61`): payroll record imports + Per week + One-time + deduction descriptions + retro Adjustment For; notification bell covers every approval (leave, time entry, overtime, payroll run, 13th month) and payroll deadlines (rule in both CLAUDE.md); self-service My Workspace (My Attendance = own DTR with Bio / Imported / Manual tags, My Payslips range print / Excel pay sheet), filing pages open on All for own-only filers, profile tab 401 fixed; menu regrouped by process, sidebar / navbar redesign.
    - User manual (simple steps, setup → reports): Claude Docs "HRIS Payroll — User Manual", https://claude.ai/code/artifact/aa765f8d-62a9-427a-a30b-f53d7c1cbed0 (private until shared).
 2. **Known limits to tell the user:**
    - Groups, reports and pay sheet subtotals use the employee's **current** branch / position (payslips keep no branch).
@@ -371,6 +384,18 @@ Also migrate `2026_10_15_100000` (leave unpaid_days) and `2026_10_15_110000` (ov
 
 Then run PermissionSeeder (new: `group-schedule-list/-create/-edit/-cancel`, `payroll-run-rollback`, `attendance-log-template-download`, `attendance-log-import`) and grant those permissions to the HR / payroll roles. Deploy vueportal `3bc1319` (Roles / Permissions guard fix) with it.
 
+Retro "Adjustment For" (2026-10-10): migrate `2026_10_16_100000` (other_type,
+allowance_type_id, other_specify, taxable on employee_retro_adjustments —
+existing retros default to taxable, as before). Then `2026_10_16_110000`
+(deduction_types.needs_description — turned on for code OTHER — and
+employee_deductions.description).
+
+Payroll record imports (2026-10-10, no migration): run PermissionSeeder then
+PayrollRoleSeeder — new `allowance-template-download / -import`,
+`deduction-template-download / -import`,
+`contribution-profile-template-download / -import` (Payroll Officer and
+Manager get them).
+
 ## To fix / follow up on the new features (2026-10-08)
 
 Found while building payroll records; none is applied yet.
@@ -391,9 +416,9 @@ Found while building payroll records; none is applied yet.
 - **No module skills yet** for Contributions, Deductions, Retro,
   Allowances, Payroll Settings, Overtime (both repos) — the api files hold
   the contracts; write skills when the payroll run starts.
-- **Template / Import** not built for allowances, deductions and
-  contribution profiles (Salary History and contribution tables have one);
-  **Weekly** allowance basis and **one-time deductions** not built.
+- Done 2026-10-10: Template / Import for allowances, deductions and
+  contribution profiles; Per week allowances; One-time deductions. Not yet
+  code-reviewed (`/review-code`).
 - **Daily-rate employees:** the contribution preview needs the month's
   actual earnings typed in; daily retro counts scheduled work days (not
   attendance) — switch both to the DTR.
