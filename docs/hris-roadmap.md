@@ -584,6 +584,39 @@ PayrollRoleSeeder — new `allowance-template-download / -import`,
 `contribution-profile-template-download / -import` (Payroll Officer and
 Manager get them).
 
+### 13th month / payroll: selected employees, rollback, paid lock, approval rounds (2026-10-11, not committed yet)
+
+Built in vueportal + reactjs-ant-design; backend tests (rolled-back
+transactions) and a read-only headless Edge check passed.
+- **Generate 13th Month:** All employees or Selected employees, like Payroll Runs (`thirteenth_month/candidates`). The Draft's Regenerate opens the same modal.
+- **Rollback:**
+  - Approved employees are posted (`thirteenth_month_pays.posted_at`) and locked.
+  - Roll Back Selected / All (`thirteenth-month-rollback`, reason) returns the batch to Draft and through approval again.
+  - Cancel is refused while any lines are still posted.
+  - The year-end tax and final pay read posted lines only.
+- **Paid lock:**
+  - The 13th month can't be rolled back on or after its pay date (December 24 when no pay date is set).
+  - Payroll run rollback is refused on or after the cut-off's pay date.
+  - Payroll rollback is also refused while the year's 13th month is Pending or has posted lines.
+- **ApproverRoleSeeder:** gives each approval chart's approvers their approver role and its permissions. Covers Leave, Time Entry, Overtime, Payroll Run + 13th Month, and the MRF charts. It only adds, so run it again whenever approvers change.
+- **Column reference:** `test-scenarios/payroll-column-reference.docx/.pdf`, the companion to the testing manual.
+
+- **Add employees to an approved payroll / 13th month (approval rounds):**
+  - Generate on an approved cut-off or year, or the record's Add Employees button, lists only employees not in it.
+  - The record goes back to Draft. The final approval releases the added employees as round 2, 3 …; earlier rounds stay locked and unchanged.
+  - Pages: an Approval Rounds panel and a round filter, which the Register and Bank File follow (a round's CSV keeps its own paid-from account).
+  - Remove Selected takes not-yet-approved lines out of a Draft; when only approved lines are left, the record is Approved again.
+  - Tested: 40+ backend checks (rolled-back transactions, including the added employee's tax / basic and the 13th-month formula) and a browser round trip.
+  - The local 13th-month batch's `generated_at` was touched by the browser test; nothing else changed.
+
+**Deploy:** after the steps above:
+1. Migrate by path, in order:
+   - `2026_10_18_100000` (it backfills approved batches as posted).
+   - `2026_10_18_110000` (approval rounds; it backfills approved lines as round 1).
+2. Run `composer dump-autoload`.
+3. Run PermissionSeeder (new: `thirteenth-month-rollback`; grant it to the payroll roles).
+4. Run `ApproverRoleSeeder` after the approval procedure seeders.
+
 ## To fix / follow up on the new features (2026-10-08)
 
 Found while building payroll records; none is applied yet.
