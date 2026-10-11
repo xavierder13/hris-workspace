@@ -509,7 +509,7 @@ Deploy: migrate `2026_10_14_130000` after `110000`.
    - Done: Payroll Officer given to Lady Rose Lutrania, Marilou Baltazar, Grace Mae Hidalgo (this device). Note: Lady Rose and Marilou are also the only Payroll Run approvers (2 required) — if one of them submits, she can't approve her own, so let Grace generate and submit.
    - Decided by Claude (user delegated, 2026-10-10): daily-rate factor stays 313; SSS / PhilHealth / Pag-IBIG on the 2nd cut-off, tax every cut-off; overtime minimum 30 min and rounded down per 15 min (Payroll Settings → Overtime, migration `2026_10_15_110000`; vueportal `f5322a4`, React `dd10845`); pre-shift overtime counts when approved.
    - Done 2026-10-10 (vueportal `4b91fa0`/`506a31b`/`5f19b4d`, React `b9c1650`/`b0fa928`/`1447c61`): payroll record imports + Per week + One-time + deduction descriptions + retro Adjustment For; notification bell covers every approval (leave, time entry, overtime, payroll run, 13th month) and payroll deadlines (rule in both CLAUDE.md); self-service My Workspace (My Attendance = own DTR with Bio / Imported / Manual tags, My Payslips range print / Excel pay sheet), filing pages open on All for own-only filers, profile tab 401 fixed; menu regrouped by process, sidebar / navbar redesign.
-   - User manual (simple steps, setup → reports; updated 2026-10-11 with bank accounts, the Generate Payroll picker, attendance import for a biometric outage, Other tools and Not available yet): Claude Docs "HRIS Payroll — User Manual", https://claude.ai/code/artifact/aa765f8d-62a9-427a-a30b-f53d7c1cbed0 (private until shared). Keep it current when a payroll feature ships.
+   - User manual (simple steps, setup → reports; updated 2026-10-11 with bank accounts, the Generate Payroll picker, attendance import for a biometric outage, Other tools and Not available yet; then with Add Employees / approval rounds, rollback before the pay date, 13th month selected employees): Claude Docs "HRIS Payroll — User Manual", https://claude.ai/code/artifact/aa765f8d-62a9-427a-a30b-f53d7c1cbed0 (private until shared). Keep it current when a payroll feature ships.
 2. **Known limits to tell the user:**
    - Groups, reports and pay sheet subtotals use the employee's **current** branch / position (payslips keep no branch).
    - Rollback leaves the cut-off's filing closed.
@@ -584,7 +584,9 @@ PayrollRoleSeeder — new `allowance-template-download / -import`,
 `contribution-profile-template-download / -import` (Payroll Officer and
 Manager get them).
 
-### 13th month / payroll: selected employees, rollback, paid lock, approval rounds (2026-10-11, not committed yet)
+### 13th month / payroll: selected employees, rollback, paid lock, approval rounds (pushed 2026-10-11)
+
+Commits: vueportal `435f7be` (ApproverRoleSeeder) + `a5b56db` on `F-HRIS-Staging`; React `6c23679` (badge padding) + `0a6fe5e`; workspace `f552359`. The Claude Docs user manual (step 4, after step 5, 13th month, Rules, Not available yet) and the testing manual 1.1 are updated.
 
 Built in vueportal + reactjs-ant-design; backend tests (rolled-back
 transactions) and a read-only headless Edge check passed.
