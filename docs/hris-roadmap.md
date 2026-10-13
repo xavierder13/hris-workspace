@@ -63,6 +63,8 @@ Module rules live in each repo's skills:
    - `2026_10_11_110000/110100` allowance types, allowances
    - `2026_10_11_120000` overtimes
    - `2026_10_19_100000` daily-rate factor to decimal (314.6 / 315 choices). Then pick the factor in Payroll Settings — 314.6 is DOLE's default, the old payroll used 315 (see the payroll manual's "How the daily rate is computed").
+   - `2026_10_19_110000` payroll_setting_assignments (Payroll Settings → Assigned Settings).
+   - `2026_10_19_120000` night_diff_enabled on payroll_settings (default On) and on assignments.
 
    Then `composer dump-autoload` and the seeders `PermissionSeeder`,
    `ContributionTableSeeder`, `DeductionTypeSeeder`, `PayrollSettingSeeder`,
