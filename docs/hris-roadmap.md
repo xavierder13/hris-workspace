@@ -83,7 +83,33 @@ React `2e2ffd3`, workspace `master`). The user manual (Claude Docs, link in
 "Continue here") covers the bank accounts, picker and attendance import, and
 lists "Not available yet". In order of what the user raised:
 
-### A. Recruitment data gateway — user's concern, agreed design, NOT built
+### A. Recruitment data gateway — BUILT 2026-10-11 (items 1–4; item 5 still optional)
+
+**Built; committed + pushed 2026-10-13** (recruitment-portal master `4f64588`, vueportal F-HRIS-Staging `5a81807`). Verified 2026-10-13 that the new portal keeps an older vueportal working: a request without `scope` gets the old rule (same data, same 403), and the lock is a no-op while `HRIS_GATEWAY_EMAIL` is unset.
+
+**What it does:**
+- **Portal `actAs`:**
+  - Without portal permission checks when vueportal sends `scope`.
+  - Acts as the matching portal user, else the service account for `scope` all.
+  - Refuses a branch scope without a portal account, and refuses a role mismatch.
+  - With no `scope` (an older vueportal), the old rule still applies.
+- **Portal `RecruitmentMaintenance`:** locked to `HRIS_GATEWAY_EMAIL`. When it is unset, any portal Administrator may call the gateway, as before.
+- **vueportal `RecruitmentController`:** sends `scope` from the HRIS role, and `audit()` logs accepted changes in the Audit Trail (new records in `ActivityLogController::RECORDS`).
+
+**Tested locally:**
+- Portal rules: 7 checks.
+- End to end: Administrator 8,540 applicants; bm@urdaneta 70; bm@sanfernando refused with a message.
+- Audit: create, update and delete logged; a failed save not logged.
+- Lock: another portal Administrator gets 401.
+
+**Deploy (either order works):**
+1. Portal code.
+2. Portal `.env`: `HRIS_GATEWAY_EMAIL=<vueportal's CAREERS_API_EMAIL>`, then `php artisan config:clear`. Copy the value from **production** vueportal's `.env`: any other email makes every HRIS recruitment screen return 401. Leaving it unset is safe (old any-Administrator rule) until it can be checked.
+3. vueportal code.
+
+HRIS Branch Managers still need a portal Branch Manager account with the same email (1 of 74 locally lacks one).
+
+Original notes:
 **Problem:** recruitment access is checked twice — vueportal `careers-*`
 permission, then the careers portal again: `RecruitmentGatewayController::actAs()`
 (recruitment-portal) looks up `user_email` among the portal's own users and
