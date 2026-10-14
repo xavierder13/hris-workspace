@@ -598,9 +598,28 @@ PayrollRoleSeeder — new `allowance-template-download / -import`,
 `contribution-profile-template-download / -import` (Payroll Officer and
 Manager get them).
 
+Night-differential hours per assigned setting (2026-10-14, vueportal
+`fcc9c92`, React `c5807e8`; user chose a
+per-employee / group window with coverage, no rate override): migrate
+`2026_10_21_100000` (night_diff_from / night_diff_to on
+payroll_setting_assignments). No permission change. Payroll Settings →
+Assigned Settings → "Night diff. from / to"; must cover 10 PM – 6 AM.
+
 ## To fix / follow up on the new features (2026-10-08)
 
 Found while building payroll records; none is applied yet.
+- **Night-diff hours — open MEDIUM review finding (2026-10-14, awaiting the
+  user's go-ahead):** `PayrollSettingAssignment::FIELDS` gained
+  `night_diff_from / _to`, so `snapshot()` now adds those keys (null) to
+  every assignment row; a run saved before the change has none, and
+  `PayrollRunService::changed()` compares `assignments` whole — Generate
+  Selected / generating around approved payslips on a cut-off with an
+  Active assignment would wrongly say the settings changed. Fix: in
+  `snapshot()` leave the two keys out when null; test against a run made
+  before the migration. Fix before deploying vueportal `fcc9c92`.
+- **Default Schedules** (`GroupScheduleFormModal.jsx:156`): same greyed
+  "Applies to" Segmented as Assigned Settings had — offered the same fix
+  (React `c5807e8`), user not asked yet.
 - **Verify seeded values** before payroll uses them: SSS / PhilHealth /
   Pag-IBIG / BIR tables (`ContributionTableSeeder`), DOLE premium rates
   (`PayrollSettingSeeder`) and the de minimis limits (RR 11-2018 values —
