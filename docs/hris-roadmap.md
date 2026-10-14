@@ -17,7 +17,7 @@ Built and pushed. vueportal is on `F-HRIS-Staging`; reactjs-ant-design and this 
 - **Payroll Cut-offs:** periods and the filing switch.
 - **Audit Trail:** add, edit and delete on leave, attendance and payroll records.
 - **Other:** Holiday Calendar, Hiring Officers, and mobile layout.
-- **Payroll records (2026-10-08, second device):** Salary History, Payroll Settings + DOLE premium rates, Allowances, government Contribution tables + employee profiles, scheduled Deductions with a payment ledger, Retro adjustments, and Overtime filing — see phases 1–2, 4, 6–7 and "To fix" below.
+- **Payroll records (2026-10-08, second device):** Salary History, Payroll Settings + DOLE premium rates, Allowances, government Contribution tables + employee profiles, scheduled Deductions with a payment ledger, Payroll Adjustments (then called Retro adjustments), and Overtime filing — see phases 1–2, 4, 6–7 and "To fix" below.
 - **UI:** app-wide menu search (Ctrl+K), clickable shift chip on Work Schedule, record tabs on My Profile.
 - **Payroll bank accounts (2026-10-11):** Banks, employee Bank Accounts by effective date (moved off the Contribution Profile), company Payroll Accounts with a Default / default periods / match-employee-bank rule, chosen per payout and kept on approval, one bank file per paying account. Also: employee picker table for Generate Payroll / Generate Selected, `/recruitment-dashboard`, the antd deprecated-props lint rule, BioBridge 5 s login timeout.
 
@@ -58,7 +58,7 @@ Module rules live in each repo's skills:
    - `2026_10_09_140000` employee_compensations (Salary History)
    - `2026_10_10_100000/100100/100200` contribution tables, rows, profiles
    - `2026_10_10_110000/110100/110200` deduction types, deductions, payments
-   - `2026_10_10_120000` retro adjustments
+   - `2026_10_10_120000` payroll adjustments (`employee_payroll_adjustments`, the whole table in one migration)
    - `2026_10_11_100000/100100` payroll settings, premium rates
    - `2026_10_11_110000/110100` allowance types, allowances
    - `2026_10_11_120000` overtimes
@@ -76,7 +76,7 @@ Module rules live in each repo's skills:
    `compensation-*`, `payroll-setting-view/-edit`, `allowance-type-*`,
    `allowance-*`, `contribution-table-*`, `contribution-profile-list/-edit`,
    `deduction-type-*`, `deduction-*` (incl. `-cancel`, `-payment`),
-   `retro-*`, `overtime-*`. Set the levels and approvers of the new
+   `payroll-adjustment-*`, `overtime-*`. Set the levels and approvers of the new
    "Overtime" Access Chart.
 
 ## Pick up here — left to do (saved 2026-10-11)
@@ -206,7 +206,7 @@ Code review of the 2026-10-09/10 work (2026-10-11, report-only, not fixed):
   payroll).
 
 Other:
-- Daily-rate employees: contribution preview and daily retro from the DTR
+- Daily-rate employees: contribution preview and daily Retro Salary suggestion from the DTR
   (now typed earnings / scheduled days); daily-paid month projection.
 - Bank file vs. the bank's own upload format; Final Pay posts nothing.
 - Salary import's "same employee on line N" numbering (attendance / new
@@ -388,16 +388,19 @@ are imported reports keyed by name, not employee id). Deduction types,
 scheduled deductions (total, per cut-off, start cut-off, every / 1st /
 2nd cut-off of the month), a payment ledger (manual now, `Payroll` posted
 by the run), hold / resume / cancel, Fully Paid when the balance is zero;
-`DeductionService::dueOn()` for the run. Retro adjustments (manual +
-suggested from back-dated Salary History) are built too
-(`RetroService`). Built 2026-10-10: One-time deductions (the whole total
+`DeductionService::dueOn()` for the run. Payroll adjustments (Payroll →
+Payroll Adjustments; manual + Retro Salary suggested from back-dated Salary
+History) are built too (`PayrollAdjustmentService`; renamed from Retro
+Adjustments 2026-10-14 — table, model, routes `payroll_adjustment/*`,
+permissions `payroll-adjustment-*`, React `/payroll-adjustments`). Built 2026-10-10: One-time deductions (the whole total
 on the start cut-off, carried until taken) and Template / Import (one line
 per deduction; same type + reference no. updates it; a line without one
 that matches a saved one's type, total and start cut-off is refused).
-Retro Other Adjustment now names what it is for (OT / holiday / night diff
-underpayment, allowance under- / overpayment, refund of over-deduction,
-Others (specify)), which fixes earning / deduction and whether it is taxed
-(before, every retro was taxable). A deduction type marked Needs Description
+An Other Adjustment names what it is for (Holiday Pay (manual), OT /
+holiday / night diff underpayment, allowance under- / overpayment, refund
+of over-deduction, Others (specify)), which fixes earning / deduction and
+whether it is taxed. Holiday Pay (manual) covers a holiday the employee's
+own branch doesn't observe (e.g. field work in a branch that does). A deduction type marked Needs Description
 (OTHER by default) requires a description on each deduction, shown on the
 payslip as "Other Deduction — …"; the import template has a description
 column.
@@ -407,7 +410,7 @@ Backend controllers exist with no React pages: `EmployeeLoansController`, `Emplo
 ### 8. Payroll run — BUILT (Payroll → Payroll Runs, skill `payroll-run`)
 
 Built 2026-10-09: Draft (regenerate) → Approved (deduction payments posted,
-retros Applied, filing off) | Cancelled; pay register and payslips with how
+payroll adjustments Applied, filing off) | Cancelled; pay register and payslips with how
 each line was computed; holiday pay / holiday OT rates from the premium
 table. Tested on real BioBridge data for employee 23363 and with holiday
 scenarios (monthly / daily-paid, worked / unworked, prior-day rule).
@@ -417,8 +420,8 @@ The original brief:
 Reads: `CompensationService::rateOn()`, Payroll Settings + premium rates
 (snapshot them per run), the DTR (phase 5), `AllowanceService::forPeriod()`,
 `ContributionService::compute()` split per the deduction schedule,
-`DeductionService::dueOn()` (post `Payroll` payments), Open retros of the
-cut-off (mark Applied). Daily rate = monthly × 12 ÷ the daily-rate factor.
+`DeductionService::dueOn()` (post `Payroll` payments), Open payroll
+adjustments of the cut-off (mark Applied). Daily rate = monthly × 12 ÷ the daily-rate factor.
 
 Per cut-off: gross pay (rate on date, DTR, OT, holiday pay, allowances), minus contributions, tax, deductions and loans, giving net pay. Then review, approve or lock, with no edits after the lock except by an adjustment.
 
@@ -569,9 +572,9 @@ Also migrate `2026_10_15_100000` (leave unpaid_days) and `2026_10_15_110000` (ov
 
 Then run PermissionSeeder (new: `group-schedule-list/-create/-edit/-cancel`, `payroll-run-rollback`, `attendance-log-template-download`, `attendance-log-import`) and grant those permissions to the HR / payroll roles. Deploy vueportal `3bc1319` (Roles / Permissions guard fix) with it.
 
-Retro "Adjustment For" (2026-10-10): migrate `2026_10_16_100000` (other_type,
-allowance_type_id, other_specify, taxable on employee_retro_adjustments —
-existing retros default to taxable, as before). Then `2026_10_16_110000`
+Payroll adjustment "Adjustment For" columns are part of
+`2026_10_10_120000` now (the old `2026_10_16_100000` was merged into it and
+deleted). Migrate `2026_10_16_110000`
 (deduction_types.needs_description — turned on for code OTHER — and
 employee_deductions.description).
 
@@ -663,17 +666,17 @@ Found while building payroll records; none is applied yet.
 - **Not tested in a browser:** menu search, shift chip, My Profile record
   tabs, and the payroll pages' add / edit forms. Run `/review-code` and
   `/test-workflow` on them before production. Browser-tested 2026-10-09:
-  the viewers (Leave / Time Entry / Overtime / Retro details, Shifting and
+  the viewers (Leave / Time Entry / Overtime / Payroll Adjustment details, Shifting and
   cut-off Filing History, Audit Trail), the Contributions compute modal and
   the contribution table import.
-- **No module skills yet** for Contributions, Deductions, Retro,
+- **No module skills yet** for Contributions, Deductions, Payroll Adjustments,
   Allowances, Payroll Settings, Overtime (both repos) — the api files hold
   the contracts; write skills when the payroll run starts.
 - Done 2026-10-10: Template / Import for allowances, deductions and
   contribution profiles; Per week allowances; One-time deductions. Not yet
   code-reviewed (`/review-code`).
 - **Daily-rate employees:** the contribution preview needs the month's
-  actual earnings typed in; daily retro counts scheduled work days (not
+  actual earnings typed in; daily Retro Salary suggestions count scheduled work days (not
   attendance) — switch both to the DTR.
 - **Daily-paid contributions:** when the month's earlier cut-off has no
   payroll run, the month base uses only this cut-off's earnings (projected).
