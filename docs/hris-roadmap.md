@@ -7,7 +7,7 @@ detail goes in the commit and the module's skill) and update
 re-ask them. Open questions are listed separately; ask those before
 building the phase they affect.
 
-## Where things stand (2026-10-11)
+## Where things stand (2026-10-14)
 
 Built and pushed. vueportal is on `F-HRIS-Staging`; reactjs-ant-design and this workspace are on `master`.
 - **Leave:** types, applications with approval, balances and credits.
@@ -19,6 +19,7 @@ Built and pushed. vueportal is on `F-HRIS-Staging`; reactjs-ant-design and this 
 - **Other:** Holiday Calendar, Hiring Officers, and mobile layout.
 - **Payroll records (2026-10-08, second device):** Salary History, Payroll Settings + DOLE premium rates, Allowances, government Contribution tables + employee profiles, scheduled Deductions with a payment ledger, Payroll Adjustments (then called Retro adjustments), and Overtime filing — see phases 1–2, 4, 6–7 and "To fix" below.
 - **UI:** app-wide menu search (Ctrl+K), clickable shift chip on Work Schedule, record tabs on My Profile.
+- **2026-10-14 (pushed — vueportal `6ac05b4`…`333fdc1`, React `21f63fa`…`74eb297`):** Payroll Adjustments (renamed from Retro, + Holiday Pay (manual)); **multi-company payroll** — Payroll Settings → Employers (each company's TIN / RDO / SSS / PhilHealth / Pag-IBIG and its own payroll accounts with a Default, general accounts as fallback), Generate payroll / 13th month for All companies or one company, payslips keep their company (employer on payslips and reports; Remittances / Year-end Tax filter by company), each approved payslip saves the accounts it was paid with (Paid From on the payroll page, rounds, list, register), Add Employees blocked from the pay date, employer share hidden from employees' payslips (Payroll Settings → Payslip, default off); Banks → View employees; filings cancel rule (owner / creator, never once paid); hiring officers + Top Management / Branch Managers; Payroll Manager files overtime; KPI Computation Class dropdown and print period fix; breadcrumbs; wider employee pickers / solid toggles; Roles & Permissions table viewer; employee delete fix.
 - **Payroll bank accounts (2026-10-11):** Banks, employee Bank Accounts by effective date (moved off the Contribution Profile), company Payroll Accounts with a Default / default periods / match-employee-bank rule, chosen per payout and kept on approval, one bank file per paying account. Also: employee picker table for Generate Payroll / Generate Selected, `/recruitment-dashboard`, the antd deprecated-props lint rule, BioBridge 5 s login timeout.
 
 Module rules live in each repo's skills:
@@ -72,17 +73,19 @@ Module rules live in each repo's skills:
    uses the guard the Administrator role already has (`web` when there is
    none) — check production's guard before seeding:
    `SELECT guard_name, COUNT(*) FROM roles GROUP BY 1`.
-6. **Grant to the payroll / HR roles** (which roles: ask the user):
-   `compensation-*`, `payroll-setting-view/-edit`, `allowance-type-*`,
-   `allowance-*`, `contribution-table-*`, `contribution-profile-list/-edit`,
-   `deduction-type-*`, `deduction-*` (incl. `-cancel`, `-payment`),
-   `payroll-adjustment-*`, `overtime-*`. Set the levels and approvers of the new
-   "Overtime" Access Chart.
+6. **Grant to the payroll / HR roles** — decided 2026-10-14: run
+   `PayrollRoleSeeder` (after PermissionSeeder), then give the **Payroll
+   Manager** role (compensation, payroll, allowance, deduction, payroll
+   adjustment and overtime filing; approvals stay with the approver roles +
+   Access Charts) to Grace Mae Hidalgo (`gchidalgo`), Lady Rose Lutrania
+   (`lrlobra`) and Marilou Baltazar (`mqbaltazar`) on User Accounts. Done
+   locally 2026-10-14. The payroll personnel set the levels and approvers
+   of the Leave, Time Entry and new "Overtime" Access Charts.
 
 ## Pick up here — left to do (saved 2026-10-11)
 
-Everything built so far is pushed (vueportal `8a3f07f` on `F-HRIS-Staging`,
-React `2e2ffd3`, workspace `master`). The user manual (Claude Docs, link in
+Everything built so far is pushed (vueportal `333fdc1` on `F-HRIS-Staging`,
+React `74eb297`, workspace `master`, 2026-10-14). The user manual (Claude Docs, link in
 "Continue here") covers the bank accounts, picker and attendance import, and
 lists "Not available yet". In order of what the user raised:
 
@@ -471,8 +474,24 @@ Local: the 2026 13th month was approved from the page (before the chart existed)
    `payroll-report-view`, `final-pay-view`, `thirteenth-month-list /
    -generate / -approve / -cancel` to the payroll roles (My Payslips needs no
    permission — the account must be linked to its employee). Fill Payroll
-   Settings → Employer and each employee's payroll bank account before the
-   first bank file.
+   Settings → Employers (each company) and each employee's payroll bank
+   account before the first bank file.
+9. **Multi-company payroll** (2026-10-14), migrations by path, after 8:
+   `2026_10_20_100000` (employer details on `companies`; copies the Payroll
+   Settings employer to the company of the same name), `2026_10_20_110000`
+   (`company_id` on payroll_runs / thirteenth_month_runs — null = all
+   companies — and on payroll_run_employees / thirteenth_month_pays,
+   backfilled from each employee's current branch's company),
+   `2026_10_20_120000` (`company_id` on company_bank_accounts — existing
+   accounts stay general), `2026_10_20_130000` (`bank_credit` on payslips /
+   13th-month lines — saved on approval; payrolls approved before it show
+   their kept accounts, worked out live; the local ones were backfilled),
+   `2026_10_20_140000` (`payslip_show_employer_share` on payroll_settings,
+   default off — the employer share hidden from employees' payslips). No new permission. Then fill Payroll Settings →
+   Employers for every company that files on its own (TIN, RDO, SSS /
+   PhilHealth / Pag-IBIG numbers) and add each company's payroll accounts
+   there (expand the company; mark its Default) — a company without one is
+   paid from the General tab's accounts.
 
 ## Payroll requests 2026-10-09 (phases 11–15)
 
@@ -699,11 +718,12 @@ Found while building payroll records; none is applied yet.
 
 ## Open questions to ask the user
 
-- Restore level 2 approval on the Leave and Manual Time Entry access charts? Someone removed it locally and added user "Bhem" at level 1. The level-2 approver mappings are still there, and one leave (#34) and one time entry are still Pending at level 2 — their Approval Route no longer shows that level.
-- Should only HR cancel an already-approved leave or time entry?
+- ~~Approval levels~~ — decided 2026-10-14: the payroll personnel set the number of levels on the access charts. (Locally leave #34 and one time entry are still Pending at a removed level 2.)
+- ~~Who cancels an approved filing~~ — decided and built 2026-10-14 (uncommitted): HR (`*-cancel`, e.g. the Timekeeper role), the owner or the creator (`*-cancel-own` + own record or `filed_by`) and Administrator, Pending or Approved, only while no payroll has paid it or holds it — Administrator included (the old Administrator bypass is gone). Applies to leave, time entry and overtime.
 - Should manual time-entry filing be limited to the filer's subordinates?
 - Should leave reasons and remarks stay visible to every `activity-logs` holder in the Audit Trail?
-- Hiring Officer eligibility: also Branch Managers / Top Management, or only ADMINISTRATION + Managerial?
-- More than one employer company running payroll here? (Payroll Settings, employer details and payroll accounts are for one company.)
-- Which banks pay payroll? (each bank's upload file format)
-- Known bug, fix offered but not applied: `employeeApi.delete` sends `{ids}` while the backend reads `employee_id`.
+- ~~Hiring Officer eligibility~~ — decided and built 2026-10-14 (uncommitted): ADMINISTRATION Managerial, Top Management, or Branch Manager of any branch (`HiringOfficer::RULES`).
+- ~~More than one employer company~~ — decided and built 2026-10-14 (uncommitted): Generate (payroll and 13th month) offers **All companies** or **one company**, one generation and one approval each; a cut-off / year has one All-companies run or runs per company, never both; an employee is in one run of a cut-off; each payslip keeps its company (the employer on payslips and reports); Payroll Settings → Employers per company; Remittances / Year-end Tax / range reports filter by the payslip's company. Next: the bank file CSV per bank (needs each bank's format).
+- ~~Negative net pay~~ — decided 2026-10-14: the payroll user settles it with a payroll adjustment. Already in place: scheduled deductions that would go below zero are skipped (still due) with a warning; a negative net warns (wording now points to a payroll adjustment).
+- Which banks pay payroll? The Bank File is a generic CSV today (name, account no., amount per company account); each bank's online-banking bulk-credit upload has its own layout — need a sample / spec per bank.
+- ~~`employeeApi.delete` bug~~ — fixed 2026-10-14 (uncommitted): one `{ employee_id }` request per employee (an array cleared related records of the first id only).
