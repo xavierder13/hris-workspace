@@ -7,7 +7,7 @@ detail goes in the commit and the module's skill) and update
 re-ask them. Open questions are listed separately; ask those before
 building the phase they affect.
 
-## Where things stand (2026-10-11)
+## Where things stand (2026-10-14)
 
 Built and pushed. vueportal is on `F-HRIS-Staging`; reactjs-ant-design and this workspace are on `master`.
 - **Leave:** types, applications with approval, balances and credits.
@@ -17,8 +17,9 @@ Built and pushed. vueportal is on `F-HRIS-Staging`; reactjs-ant-design and this 
 - **Payroll Cut-offs:** periods and the filing switch.
 - **Audit Trail:** add, edit and delete on leave, attendance and payroll records.
 - **Other:** Holiday Calendar, Hiring Officers, and mobile layout.
-- **Payroll records (2026-10-08, second device):** Salary History, Payroll Settings + DOLE premium rates, Allowances, government Contribution tables + employee profiles, scheduled Deductions with a payment ledger, Retro adjustments, and Overtime filing — see phases 1–2, 4, 6–7 and "To fix" below.
+- **Payroll records (2026-10-08, second device):** Salary History, Payroll Settings + DOLE premium rates, Allowances, government Contribution tables + employee profiles, scheduled Deductions with a payment ledger, Payroll Adjustments (then called Retro adjustments), and Overtime filing — see phases 1–2, 4, 6–7 and "To fix" below.
 - **UI:** app-wide menu search (Ctrl+K), clickable shift chip on Work Schedule, record tabs on My Profile.
+- **2026-10-14 (pushed — vueportal `6ac05b4`…`333fdc1`, React `21f63fa`…`74eb297`):** Payroll Adjustments (renamed from Retro, + Holiday Pay (manual)); **multi-company payroll** — Payroll Settings → Employers (each company's TIN / RDO / SSS / PhilHealth / Pag-IBIG and its own payroll accounts with a Default, general accounts as fallback), Generate payroll / 13th month for All companies or one company, payslips keep their company (employer on payslips and reports; Remittances / Year-end Tax filter by company), each approved payslip saves the accounts it was paid with (Paid From on the payroll page, rounds, list, register), Add Employees blocked from the pay date, employer share hidden from employees' payslips (Payroll Settings → Payslip, default off); Banks → View employees; filings cancel rule (owner / creator, never once paid); hiring officers + Top Management / Branch Managers; Payroll Manager files overtime; KPI Computation Class dropdown and print period fix; breadcrumbs; wider employee pickers / solid toggles; Roles & Permissions table viewer; employee delete fix.
 - **Payroll bank accounts (2026-10-11):** Banks, employee Bank Accounts by effective date (moved off the Contribution Profile), company Payroll Accounts with a Default / default periods / match-employee-bank rule, chosen per payout and kept on approval, one bank file per paying account. Also: employee picker table for Generate Payroll / Generate Selected, `/recruitment-dashboard`, the antd deprecated-props lint rule, BioBridge 5 s login timeout.
 
 Module rules live in each repo's skills:
@@ -58,10 +59,13 @@ Module rules live in each repo's skills:
    - `2026_10_09_140000` employee_compensations (Salary History)
    - `2026_10_10_100000/100100/100200` contribution tables, rows, profiles
    - `2026_10_10_110000/110100/110200` deduction types, deductions, payments
-   - `2026_10_10_120000` retro adjustments
+   - `2026_10_10_120000` payroll adjustments (`employee_payroll_adjustments`, the whole table in one migration)
    - `2026_10_11_100000/100100` payroll settings, premium rates
    - `2026_10_11_110000/110100` allowance types, allowances
    - `2026_10_11_120000` overtimes
+   - `2026_10_19_100000` daily-rate factor to decimal (314.6 / 315 choices). Then pick the factor in Payroll Settings — 314.6 is DOLE's default, the old payroll used 315 (see the payroll manual's "How the daily rate is computed").
+   - `2026_10_19_110000` payroll_setting_assignments (Payroll Settings → Assigned Settings).
+   - `2026_10_19_120000` night_diff_enabled on payroll_settings (default On) and on assignments.
 
    Then `composer dump-autoload` and the seeders `PermissionSeeder`,
    `ContributionTableSeeder`, `DeductionTypeSeeder`, `PayrollSettingSeeder`,
@@ -69,22 +73,24 @@ Module rules live in each repo's skills:
    uses the guard the Administrator role already has (`web` when there is
    none) — check production's guard before seeding:
    `SELECT guard_name, COUNT(*) FROM roles GROUP BY 1`.
-6. **Grant to the payroll / HR roles** (which roles: ask the user):
-   `compensation-*`, `payroll-setting-view/-edit`, `allowance-type-*`,
-   `allowance-*`, `contribution-table-*`, `contribution-profile-list/-edit`,
-   `deduction-type-*`, `deduction-*` (incl. `-cancel`, `-payment`),
-   `retro-*`, `overtime-*`. Set the levels and approvers of the new
-   "Overtime" Access Chart.
+6. **Grant to the payroll / HR roles** — decided 2026-10-14: run
+   `PayrollRoleSeeder` (after PermissionSeeder), then give the **Payroll
+   Manager** role (compensation, payroll, allowance, deduction, payroll
+   adjustment and overtime filing; approvals stay with the approver roles +
+   Access Charts) to Grace Mae Hidalgo (`gchidalgo`), Lady Rose Lutrania
+   (`lrlobra`) and Marilou Baltazar (`mqbaltazar`) on User Accounts. Done
+   locally 2026-10-14. The payroll personnel set the levels and approvers
+   of the Leave, Time Entry and new "Overtime" Access Charts.
 
 ## Pick up here — left to do (saved 2026-10-11)
 
-Everything built so far is pushed (vueportal `5a54298` on `F-HRIS-Staging` —
-master merged in; React `d122d41`; workspace `master`). The user manual
-(Claude Docs, link in "Continue here") covers bank accounts, the picker,
-attendance import, session expiry and persistent dialogs, and lists "Not
-available yet".
+Everything built so far is pushed (vueportal `333fdc1` on `F-HRIS-Staging`,
+React `74eb297`, workspace `master`, 2026-10-14; then night-diff hours: vueportal
+`fcc9c92`, React `c5807e8`). The user manual (Claude Docs, link in
+"Continue here") covers the bank accounts, picker and attendance import, and
+lists "Not available yet".
 
-### Next up, in order (suggested)
+### Next up, in order (from local commit `7860da2`, never pushed before this merge — re-check each item against the sections below; some are done)
 1. **Remaining review findings (section C):** the cancel-own race, the
    bell's per-user caching, Generate Template's branch / position options
    for payroll-only roles — no decision needed; `/review-code` after.
@@ -104,7 +110,33 @@ available yet".
 
 In order of what the user raised:
 
-### A. Recruitment data gateway — user's concern, agreed design, NOT built
+### A. Recruitment data gateway — BUILT 2026-10-11 (items 1–4; item 5 still optional)
+
+**Built; committed + pushed 2026-10-13** (recruitment-portal master `4f64588`, vueportal F-HRIS-Staging `5a81807`). Verified 2026-10-13 that the new portal keeps an older vueportal working: a request without `scope` gets the old rule (same data, same 403), and the lock is a no-op while `HRIS_GATEWAY_EMAIL` is unset.
+
+**What it does:**
+- **Portal `actAs`:**
+  - Without portal permission checks when vueportal sends `scope`.
+  - Acts as the matching portal user, else the service account for `scope` all.
+  - Refuses a branch scope without a portal account, and refuses a role mismatch.
+  - With no `scope` (an older vueportal), the old rule still applies.
+- **Portal `RecruitmentMaintenance`:** locked to `HRIS_GATEWAY_EMAIL`. When it is unset, any portal Administrator may call the gateway, as before.
+- **vueportal `RecruitmentController`:** sends `scope` from the HRIS role, and `audit()` logs accepted changes in the Audit Trail (new records in `ActivityLogController::RECORDS`).
+
+**Tested locally:**
+- Portal rules: 7 checks.
+- End to end: Administrator 8,540 applicants; bm@urdaneta 70; bm@sanfernando refused with a message.
+- Audit: create, update and delete logged; a failed save not logged.
+- Lock: another portal Administrator gets 401.
+
+**Deploy (either order works):**
+1. Portal code.
+2. Portal `.env`: `HRIS_GATEWAY_EMAIL=<vueportal's CAREERS_API_EMAIL>`, then `php artisan config:clear`. Copy the value from **production** vueportal's `.env`: any other email makes every HRIS recruitment screen return 401. Leaving it unset is safe (old any-Administrator rule) until it can be checked.
+3. vueportal code.
+
+HRIS Branch Managers still need a portal Branch Manager account with the same email (1 of 74 locally lacks one).
+
+Original notes:
 **Problem:** recruitment access is checked twice — vueportal `careers-*`
 permission, then the careers portal again: `RecruitmentGatewayController::actAs()`
 (recruitment-portal) looks up `user_email` among the portal's own users and
@@ -193,7 +225,7 @@ Code review of the 2026-10-09/10 work (2026-10-11):
   payroll).
 
 Other:
-- Daily-rate employees: contribution preview and daily retro from the DTR
+- Daily-rate employees: contribution preview and daily Retro Salary suggestion from the DTR
   (now typed earnings / scheduled days); daily-paid month projection.
 - Bank file vs. the bank's own upload format; Final Pay posts nothing.
 - Salary import's "same employee on line N" numbering (attendance / new
@@ -373,16 +405,19 @@ are imported reports keyed by name, not employee id). Deduction types,
 scheduled deductions (total, per cut-off, start cut-off, every / 1st /
 2nd cut-off of the month), a payment ledger (manual now, `Payroll` posted
 by the run), hold / resume / cancel, Fully Paid when the balance is zero;
-`DeductionService::dueOn()` for the run. Retro adjustments (manual +
-suggested from back-dated Salary History) are built too
-(`RetroService`). Built 2026-10-10: One-time deductions (the whole total
+`DeductionService::dueOn()` for the run. Payroll adjustments (Payroll →
+Payroll Adjustments; manual + Retro Salary suggested from back-dated Salary
+History) are built too (`PayrollAdjustmentService`; renamed from Retro
+Adjustments 2026-10-14 — table, model, routes `payroll_adjustment/*`,
+permissions `payroll-adjustment-*`, React `/payroll-adjustments`). Built 2026-10-10: One-time deductions (the whole total
 on the start cut-off, carried until taken) and Template / Import (one line
 per deduction; same type + reference no. updates it; a line without one
 that matches a saved one's type, total and start cut-off is refused).
-Retro Other Adjustment now names what it is for (OT / holiday / night diff
-underpayment, allowance under- / overpayment, refund of over-deduction,
-Others (specify)), which fixes earning / deduction and whether it is taxed
-(before, every retro was taxable). A deduction type marked Needs Description
+An Other Adjustment names what it is for (Holiday Pay (manual), OT /
+holiday / night diff underpayment, allowance under- / overpayment, refund
+of over-deduction, Others (specify)), which fixes earning / deduction and
+whether it is taxed. Holiday Pay (manual) covers a holiday the employee's
+own branch doesn't observe (e.g. field work in a branch that does). A deduction type marked Needs Description
 (OTHER by default) requires a description on each deduction, shown on the
 payslip as "Other Deduction — …"; the import template has a description
 column.
@@ -392,7 +427,7 @@ Backend controllers exist with no React pages: `EmployeeLoansController`, `Emplo
 ### 8. Payroll run — BUILT (Payroll → Payroll Runs, skill `payroll-run`)
 
 Built 2026-10-09: Draft (regenerate) → Approved (deduction payments posted,
-retros Applied, filing off) | Cancelled; pay register and payslips with how
+payroll adjustments Applied, filing off) | Cancelled; pay register and payslips with how
 each line was computed; holiday pay / holiday OT rates from the premium
 table. Tested on real BioBridge data for employee 23363 and with holiday
 scenarios (monthly / daily-paid, worked / unworked, prior-day rule).
@@ -402,8 +437,8 @@ The original brief:
 Reads: `CompensationService::rateOn()`, Payroll Settings + premium rates
 (snapshot them per run), the DTR (phase 5), `AllowanceService::forPeriod()`,
 `ContributionService::compute()` split per the deduction schedule,
-`DeductionService::dueOn()` (post `Payroll` payments), Open retros of the
-cut-off (mark Applied). Daily rate = monthly × 12 ÷ the daily-rate factor.
+`DeductionService::dueOn()` (post `Payroll` payments), Open payroll
+adjustments of the cut-off (mark Applied). Daily rate = monthly × 12 ÷ the daily-rate factor.
 
 Per cut-off: gross pay (rate on date, DTR, OT, holiday pay, allowances), minus contributions, tax, deductions and loans, giving net pay. Then review, approve or lock, with no edits after the lock except by an adjustment.
 
@@ -453,8 +488,24 @@ Local: the 2026 13th month was approved from the page (before the chart existed)
    `payroll-report-view`, `final-pay-view`, `thirteenth-month-list /
    -generate / -approve / -cancel` to the payroll roles (My Payslips needs no
    permission — the account must be linked to its employee). Fill Payroll
-   Settings → Employer and each employee's payroll bank account before the
-   first bank file.
+   Settings → Employers (each company) and each employee's payroll bank
+   account before the first bank file.
+9. **Multi-company payroll** (2026-10-14), migrations by path, after 8:
+   `2026_10_20_100000` (employer details on `companies`; copies the Payroll
+   Settings employer to the company of the same name), `2026_10_20_110000`
+   (`company_id` on payroll_runs / thirteenth_month_runs — null = all
+   companies — and on payroll_run_employees / thirteenth_month_pays,
+   backfilled from each employee's current branch's company),
+   `2026_10_20_120000` (`company_id` on company_bank_accounts — existing
+   accounts stay general), `2026_10_20_130000` (`bank_credit` on payslips /
+   13th-month lines — saved on approval; payrolls approved before it show
+   their kept accounts, worked out live; the local ones were backfilled),
+   `2026_10_20_140000` (`payslip_show_employer_share` on payroll_settings,
+   default off — the employer share hidden from employees' payslips). No new permission. Then fill Payroll Settings →
+   Employers for every company that files on its own (TIN, RDO, SSS /
+   PhilHealth / Pag-IBIG numbers) and add each company's payroll accounts
+   there (expand the company; mark its Default) — a company without one is
+   paid from the General tab's accounts.
 
 ## Payroll requests 2026-10-09 (phases 11–15)
 
@@ -523,7 +574,8 @@ Deploy: migrate `2026_10_14_130000` after `110000`.
    - Done: Payroll Officer given to Lady Rose Lutrania, Marilou Baltazar, Grace Mae Hidalgo (this device). Note: Lady Rose and Marilou are also the only Payroll Run approvers (2 required) — if one of them submits, she can't approve her own, so let Grace generate and submit.
    - Decided by Claude (user delegated, 2026-10-10): daily-rate factor stays 313; SSS / PhilHealth / Pag-IBIG on the 2nd cut-off, tax every cut-off; overtime minimum 30 min and rounded down per 15 min (Payroll Settings → Overtime, migration `2026_10_15_110000`; vueportal `f5322a4`, React `dd10845`); pre-shift overtime counts when approved.
    - Done 2026-10-10 (vueportal `4b91fa0`/`506a31b`/`5f19b4d`, React `b9c1650`/`b0fa928`/`1447c61`): payroll record imports + Per week + One-time + deduction descriptions + retro Adjustment For; notification bell covers every approval (leave, time entry, overtime, payroll run, 13th month) and payroll deadlines (rule in both CLAUDE.md); self-service My Workspace (My Attendance = own DTR with Bio / Imported / Manual tags, My Payslips range print / Excel pay sheet), filing pages open on All for own-only filers, profile tab 401 fixed; menu regrouped by process, sidebar / navbar redesign.
-   - User manual (simple steps, setup → reports; updated 2026-10-11 with bank accounts, the Generate Payroll picker, attendance import for a biometric outage, Other tools and Not available yet): Claude Docs "HRIS Payroll — User Manual", https://claude.ai/code/artifact/aa765f8d-62a9-427a-a30b-f53d7c1cbed0 (private until shared). Keep it current when a payroll feature ships.
+   - User manual (simple steps, setup → reports; updated 2026-10-11 with bank accounts, the Generate Payroll picker, attendance import for a biometric outage, Other tools and Not available yet; then with Add Employees / approval rounds, rollback before the pay date, 13th month selected employees): Claude Docs "HRIS Payroll — User Manual", https://claude.ai/code/artifact/aa765f8d-62a9-427a-a30b-f53d7c1cbed0 (private until shared). Keep it current when a payroll feature ships.
+   - Dashboards explanation (every section of the Workforce, Recruitment and KPI Dashboards — what it shows and how each number is computed; 2026-10-11): Claude Docs "HRIS Dashboards — Features and Computations", https://claude.ai/code/artifact/0fdf02e1-dc82-436d-8340-c5589eeeeeba (private until shared). Payroll column explanations: test-scenarios/payroll-column-reference.docx/.pdf. Keep both current when a dashboard section or payroll view changes.
 2. **Known limits to tell the user:**
    - Groups, reports and pay sheet subtotals use the employee's **current** branch / position (payslips keep no branch).
    - Rollback leaves the cut-off's filing closed.
@@ -553,9 +605,9 @@ Also migrate `2026_10_15_100000` (leave unpaid_days) and `2026_10_15_110000` (ov
 
 Then run PermissionSeeder (new: `group-schedule-list/-create/-edit/-cancel`, `payroll-run-rollback`, `attendance-log-template-download`, `attendance-log-import`) and grant those permissions to the HR / payroll roles. Deploy vueportal `3bc1319` (Roles / Permissions guard fix) with it.
 
-Retro "Adjustment For" (2026-10-10): migrate `2026_10_16_100000` (other_type,
-allowance_type_id, other_specify, taxable on employee_retro_adjustments —
-existing retros default to taxable, as before). Then `2026_10_16_110000`
+Payroll adjustment "Adjustment For" columns are part of
+`2026_10_10_120000` now (the old `2026_10_16_100000` was merged into it and
+deleted). Migrate `2026_10_16_110000`
 (deduction_types.needs_description — turned on for code OTHER — and
 employee_deductions.description).
 
@@ -605,6 +657,41 @@ per-employee / group window with coverage, no rate override): migrate
 payroll_setting_assignments). No permission change. Payroll Settings →
 Assigned Settings → "Night diff. from / to"; must cover 10 PM – 6 AM.
 
+### 13th month / payroll: selected employees, rollback, paid lock, approval rounds (pushed 2026-10-11)
+
+Commits: vueportal `435f7be` (ApproverRoleSeeder) + `a5b56db` on `F-HRIS-Staging`; React `6c23679` (badge padding) + `0a6fe5e`; workspace `f552359`. The Claude Docs user manual (step 4, after step 5, 13th month, Rules, Not available yet) and the testing manual 1.1 are updated.
+
+Built in vueportal + reactjs-ant-design; backend tests (rolled-back
+transactions) and a read-only headless Edge check passed.
+- **Generate 13th Month:** All employees or Selected employees, like Payroll Runs (`thirteenth_month/candidates`). The Draft's Regenerate opens the same modal.
+- **Rollback:**
+  - Approved employees are posted (`thirteenth_month_pays.posted_at`) and locked.
+  - Roll Back Selected / All (`thirteenth-month-rollback`, reason) returns the batch to Draft and through approval again.
+  - Cancel is refused while any lines are still posted.
+  - The year-end tax and final pay read posted lines only.
+- **Paid lock:**
+  - The 13th month can't be rolled back on or after its pay date (December 24 when no pay date is set).
+  - Payroll run rollback is refused on or after the cut-off's pay date.
+  - Payroll rollback is also refused while the year's 13th month is Pending or has posted lines.
+- **ApproverRoleSeeder:** gives each approval chart's approvers their approver role and its permissions. Covers Leave, Time Entry, Overtime, Payroll Run + 13th Month, and the MRF charts. It only adds, so run it again whenever approvers change.
+- **Column reference:** `test-scenarios/payroll-column-reference.docx/.pdf`, the companion to the testing manual.
+
+- **Add employees to an approved payroll / 13th month (approval rounds):**
+  - Generate on an approved cut-off or year, or the record's Add Employees button, lists only employees not in it.
+  - The record goes back to Draft. The final approval releases the added employees as round 2, 3 …; earlier rounds stay locked and unchanged.
+  - Pages: an Approval Rounds panel and a round filter, which the Register and Bank File follow (a round's CSV keeps its own paid-from account).
+  - Remove Selected takes not-yet-approved lines out of a Draft; when only approved lines are left, the record is Approved again.
+  - Tested: 40+ backend checks (rolled-back transactions, including the added employee's tax / basic and the 13th-month formula) and a browser round trip.
+  - The local 13th-month batch's `generated_at` was touched by the browser test; nothing else changed.
+
+**Deploy:** after the steps above:
+1. Migrate by path, in order:
+   - `2026_10_18_100000` (it backfills approved batches as posted).
+   - `2026_10_18_110000` (approval rounds; it backfills approved lines as round 1).
+2. Run `composer dump-autoload`.
+3. Run PermissionSeeder (new: `thirteenth-month-rollback`; grant it to the payroll roles).
+4. Run `ApproverRoleSeeder` after the approval procedure seeders.
+
 ## To fix / follow up on the new features (2026-10-08)
 
 Found while building payroll records; none is applied yet.
@@ -631,17 +718,17 @@ Found while building payroll records; none is applied yet.
 - **Not tested in a browser:** menu search, shift chip, My Profile record
   tabs, and the payroll pages' add / edit forms. Run `/review-code` and
   `/test-workflow` on them before production. Browser-tested 2026-10-09:
-  the viewers (Leave / Time Entry / Overtime / Retro details, Shifting and
+  the viewers (Leave / Time Entry / Overtime / Payroll Adjustment details, Shifting and
   cut-off Filing History, Audit Trail), the Contributions compute modal and
   the contribution table import.
-- **No module skills yet** for Contributions, Deductions, Retro,
+- **No module skills yet** for Contributions, Deductions, Payroll Adjustments,
   Allowances, Payroll Settings, Overtime (both repos) — the api files hold
   the contracts; write skills when the payroll run starts.
 - Done 2026-10-10: Template / Import for allowances, deductions and
   contribution profiles; Per week allowances; One-time deductions. Not yet
   code-reviewed (`/review-code`).
 - **Daily-rate employees:** the contribution preview needs the month's
-  actual earnings typed in; daily retro counts scheduled work days (not
+  actual earnings typed in; daily Retro Salary suggestions count scheduled work days (not
   attendance) — switch both to the DTR.
 - **Daily-paid contributions:** when the month's earlier cut-off has no
   payroll run, the month base uses only this cut-off's earnings (projected).
@@ -664,11 +751,12 @@ Found while building payroll records; none is applied yet.
 
 ## Open questions to ask the user
 
-- Restore level 2 approval on the Leave and Manual Time Entry access charts? Someone removed it locally and added user "Bhem" at level 1. The level-2 approver mappings are still there, and one leave (#34) and one time entry are still Pending at level 2 — their Approval Route no longer shows that level.
-- Should only HR cancel an already-approved leave or time entry?
+- ~~Approval levels~~ — decided 2026-10-14: the payroll personnel set the number of levels on the access charts. (Locally leave #34 and one time entry are still Pending at a removed level 2.)
+- ~~Who cancels an approved filing~~ — decided and built 2026-10-14 (uncommitted): HR (`*-cancel`, e.g. the Timekeeper role), the owner or the creator (`*-cancel-own` + own record or `filed_by`) and Administrator, Pending or Approved, only while no payroll has paid it or holds it — Administrator included (the old Administrator bypass is gone). Applies to leave, time entry and overtime.
 - Should manual time-entry filing be limited to the filer's subordinates?
 - Should leave reasons and remarks stay visible to every `activity-logs` holder in the Audit Trail?
-- Hiring Officer eligibility: also Branch Managers / Top Management, or only ADMINISTRATION + Managerial?
-- More than one employer company running payroll here? (Payroll Settings, employer details and payroll accounts are for one company.)
-- Which banks pay payroll? (each bank's upload file format)
-- Known bug, fix offered but not applied: `employeeApi.delete` sends `{ids}` while the backend reads `employee_id`.
+- ~~Hiring Officer eligibility~~ — decided and built 2026-10-14 (uncommitted): ADMINISTRATION Managerial, Top Management, or Branch Manager of any branch (`HiringOfficer::RULES`).
+- ~~More than one employer company~~ — decided and built 2026-10-14 (uncommitted): Generate (payroll and 13th month) offers **All companies** or **one company**, one generation and one approval each; a cut-off / year has one All-companies run or runs per company, never both; an employee is in one run of a cut-off; each payslip keeps its company (the employer on payslips and reports); Payroll Settings → Employers per company; Remittances / Year-end Tax / range reports filter by the payslip's company. Next: the bank file CSV per bank (needs each bank's format).
+- ~~Negative net pay~~ — decided 2026-10-14: the payroll user settles it with a payroll adjustment. Already in place: scheduled deductions that would go below zero are skipped (still due) with a warning; a negative net warns (wording now points to a payroll adjustment).
+- Which banks pay payroll? The Bank File is a generic CSV today (name, account no., amount per company account); each bank's online-banking bulk-credit upload has its own layout — need a sample / spec per bank.
+- ~~`employeeApi.delete` bug~~ — fixed 2026-10-14 (uncommitted): one `{ employee_id }` request per employee (an array cleared related records of the first id only).
