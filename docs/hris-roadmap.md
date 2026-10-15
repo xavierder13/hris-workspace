@@ -93,6 +93,10 @@ Module rules live in each repo's skills:
    (needs_description on allowance_types, description on
    employee_allowances), then `PayrollSettingSeeder` again (firstOrCreate —
    adds the OTHER "Other Allowance" type with Needs description).
+   Payroll Assistant: migration `2026_10_23_100000` (assistant_topics,
+   assistant_searches), PermissionSeeder (payroll-assistant, -manage),
+   PayrollRoleSeeder, `composer dump-autoload`, then
+   `PayrollAssistantTopicSeeder` (26 topics; existing codes kept).
    Tax tables: run `ContributionTableSeeder` again — it skips the existing
    tables and adds the TRAIN 2023 `BIR Semi-monthly` and `BIR Annual` ones
    (Contributions → Tables; check them against the current BIR table).
