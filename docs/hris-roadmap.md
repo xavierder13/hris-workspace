@@ -20,6 +20,7 @@ Built and pushed. vueportal is on `F-HRIS-Staging`; reactjs-ant-design and this 
 - **Payroll records (2026-10-08, second device):** Salary History, Payroll Settings + DOLE premium rates, Allowances, government Contribution tables + employee profiles, scheduled Deductions with a payment ledger, Payroll Adjustments (then called Retro adjustments), and Overtime filing — see phases 1–2, 4, 6–7 and "To fix" below.
 - **UI:** app-wide menu search (Ctrl+K), clickable shift chip on Work Schedule, record tabs on My Profile.
 - **2026-10-14 (pushed — vueportal `6ac05b4`…`333fdc1`, React `21f63fa`…`74eb297`):** Payroll Adjustments (renamed from Retro, + Holiday Pay (manual)); **multi-company payroll** — Payroll Settings → Employers (each company's TIN / RDO / SSS / PhilHealth / Pag-IBIG and its own payroll accounts with a Default, general accounts as fallback), Generate payroll / 13th month for All companies or one company, payslips keep their company (employer on payslips and reports; Remittances / Year-end Tax filter by company), each approved payslip saves the accounts it was paid with (Paid From on the payroll page, rounds, list, register), Add Employees blocked from the pay date, employer share hidden from employees' payslips (Payroll Settings → Payslip, default off); Banks → View employees; filings cancel rule (owner / creator, never once paid); hiring officers + Top Management / Branch Managers; Payroll Manager files overtime; KPI Computation Class dropdown and print period fix; breadcrumbs; wider employee pickers / solid toggles; Roles & Permissions table viewer; employee delete fix.
+- **2026-10-15 (pushed — vueportal `554abca`…`4626d14`, React `ab71d97`…`e627dc9`):** Administrator-only **Delete Payroll** (any status / period, postings undone) and roll back / regenerate / add employees **after the pay date**; cut-off delete Administrator-only and refused while anything points at it. **BIR semi-monthly / monthly / annual tables** (semi-monthly on each cut-off's own pay with tax "Every cut-off"; annual for year-end and final pay). **Centavo rule per deduction** (PhilHealth Cut = old payroll's; others Round) and an exact monthly split (166.75 + 166.74). **Deductions:** on / off (hold) switch, Paid column, category filter, Specify / Item Bought; a partial cash payment tagged to a cut-off leaves only the rest due (warning on the payslip); new **Installment** type (local data). **Over-break counts as late** (paired break out / in, as the Attendance tab; setting, default on). **Other Allowance** with a Specify description. Local only: payroll cleared and restarted at 2026-09-A (21 / 6 cut-offs); Nancayasan paysheet 2026-09-B rebuilt in run 25 (salaries, NANC-S2…S5 shifts, schedules, one-time loans, Lapeña's punches imported — her BioBridge ID is 25191733, Briones assigned setting) — deductions tally to the centavo, net −991.99 (Templo / Ventura leaves, Manibog half-day rule, Cantorna rate rounding).
 - **Payroll bank accounts (2026-10-11):** Banks, employee Bank Accounts by effective date (moved off the Contribution Profile), company Payroll Accounts with a Default / default periods / match-employee-bank rule, chosen per payout and kept on approval, one bank file per paying account. Also: employee picker table for Generate Payroll / Generate Selected, `/recruitment-dashboard`, the antd deprecated-props lint rule, BioBridge 5 s login timeout.
 
 Module rules live in each repo's skills:
@@ -81,12 +82,30 @@ Module rules live in each repo's skills:
    (`lrlobra`) and Marilou Baltazar (`mqbaltazar`) on User Accounts. Done
    locally 2026-10-14. The payroll personnel set the levels and approvers
    of the Leave, Time Entry and new "Overtime" Access Charts.
+   Deleting a payroll run (`payroll-run-delete`), rolling back / regenerating
+   one after its pay date (`payroll-run-rollback-paid`) and deleting a
+   cut-off (`payroll-cutoff-delete`) are the Administrator's alone:
+   Migration `2026_10_22_100000` (sss_ / philhealth_ / pagibig_ /
+   tax_centavos on payroll_settings — PhilHealth defaults to Cut, the old
+   payroll's rule; the others to Round). Migration `2026_10_22_110000`
+   (over_break_late on payroll_settings, default on — over-break counts as
+   late, the old payroll's rule). Migration `2026_10_22_120000`
+   (needs_description on allowance_types, description on
+   employee_allowances), then `PayrollSettingSeeder` again (firstOrCreate —
+   adds the OTHER "Other Allowance" type with Needs description).
+   Tax tables: run `ContributionTableSeeder` again — it skips the existing
+   tables and adds the TRAIN 2023 `BIR Semi-monthly` and `BIR Annual` ones
+   (Contributions → Tables; check them against the current BIR table).
+   PermissionSeeder adds the two new ones; PayrollRoleSeeder no longer gives
+   Payroll Manager `payroll-cutoff-delete` (its sync removes it) — check no
+   other role holds it.
 
 ## Pick up here — left to do (saved 2026-10-11)
 
 Everything built so far is pushed (vueportal `333fdc1` on `F-HRIS-Staging`,
 React `74eb297`, workspace `master`, 2026-10-14; then night-diff hours: vueportal
-`fcc9c92`, React `c5807e8`). The user manual (Claude Docs, link in
+`fcc9c92`, React `c5807e8`; then the 2026-10-15 payroll rules: vueportal
+`4626d14`, React `e627dc9`). The user manual (Claude Docs, link in
 "Continue here") covers the bank accounts, picker and attendance import, and
 lists "Not available yet".
 
