@@ -103,6 +103,38 @@ Module rules live in each repo's skills:
    PermissionSeeder adds the two new ones; PayrollRoleSeeder no longer gives
    Payroll Manager `payroll-cutoff-delete` (its sync removes it) — check no
    other role holds it.
+7. **Daily scheduler** (vueportal `f7f39e8`: `app/Console/Kernel.php`,
+   `app/Console/Commands/DeactivateResignedEmployees.php` +
+   `RegularizePassedEmployees.php`; deploy with `dc55393`, the rehire /
+   Date Resigned fix in `EmployeeMasterDataController` +
+   `EmployeeOffboardingController`).
+   Deactivate Resigned runs at 00:05 and Regularize Passed at 00:10 (Asia/Manila,
+   from `config/app.php`). Both run the same rules as the Sync & Updates buttons.
+   No migration or seeder is needed. Steps on the production server:
+   - **Deploy the code**, then check that `cd /path/to/vueportal && php artisan list employees`
+     shows `employees:deactivate-resigned` and `employees:regularize-passed`.
+   - **Find PHP and the web user:** `which php` (with several PHP versions, use the
+     site's full path, e.g. `/usr/bin/php7.4`), and `ls -ld /path/to/vueportal/storage`.
+     The owner (usually `www-data` or `apache`) is the user the cron job runs as.
+   - **Webmin → System → Scheduled Cron Jobs → Create a new scheduled cron job:**
+     - Execute cron job as: the web user
+     - Active: Yes
+     - Command: `cd /path/to/vueportal && /usr/bin/php artisan schedule:run >> /path/to/vueportal/storage/logs/schedule.log 2>&1`
+     - When to execute: **Times and dates selected below**, with Minutes, Hours, Days,
+       Months and Weekdays all set to **All**. That runs it every minute, and Laravel
+       picks the 00:05 / 00:10 times itself. Don't use Webmin's "Daily": it calls
+       `schedule:run` once a day and misses those minutes.
+   - **Test:** open the job and click **Run Now**. Outside 00:05 and 00:10 it prints
+     "No scheduled commands are ready to run.", which is correct. "Permission denied"
+     or "php: not found" means the user or the PHP path is wrong. Check the server
+     clock with `date`.
+   - **First run by hand** (optional), from Webmin → Others → Command Shell:
+     `cd /path/to/vueportal && sudo -u www-data php artisan employees:regularize-passed`.
+     Before running `employees:deactivate-resigned`, look at production's own
+     candidates (the bell's "resigned to deactivate" count uses the same query). The
+     local run was 14. Rehires whose only rehire record is a newer Date Employed are
+     now kept active.
+   - **Next morning:** check `storage/logs/schedule.log` and the Resigned list.
 
 ## Pick up here — left to do (saved 2026-10-11)
 
@@ -718,6 +750,22 @@ transactions) and a read-only headless Edge check passed.
 ## To fix / follow up on the new features (2026-10-08)
 
 Found while building payroll records; none is applied yet.
+- **Holiday prior-day rule — two gaps (found 2026-10-16, report-only, not
+  fixed):** `DtrService::days()` (~line 313) checks
+  `holiday_pay_needs_prior_day` against `$lastWorkday`, the last scheduled
+  workday seen *within the cut-off*.
+  - **MEDIUM, successive regular holidays:** `'Holiday'` counts as a valid
+    prior day, so an employee absent on the day before Maundy Thursday loses
+    Thursday but is still paid Good Friday. Under the Labor Code IRR they get
+    neither unless they work the first holiday. Fix: carry the first
+    holiday's eligibility forward (treat an ineligible `Holiday` like
+    `Absent`; `Holiday Worked` stays eligible).
+  - **LOW, holiday on the cut-off's first workday:** `$lastWorkday` starts
+    `null`, which counts as eligible, so the day before (in the previous
+    cut-off) is never checked. Fix: seed it from the last scheduled workday
+    before `$from`.
+  - Affects daily-paid employees only (`PayrollRunService` ~line 700). Both
+    are noted for HR in the Payroll Process Flow doc ("Settings explained").
 - **Night-diff hours — open MEDIUM review finding (2026-10-14, awaiting the
   user's go-ahead):** `PayrollSettingAssignment::FIELDS` gained
   `night_diff_from / _to`, so `snapshot()` now adds those keys (null) to
