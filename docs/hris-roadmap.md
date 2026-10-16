@@ -135,6 +135,15 @@ Module rules live in each repo's skills:
      local run was 14. Rehires whose only rehire record is a newer Date Employed are
      now kept active.
    - **Next morning:** check `storage/logs/schedule.log` and the Resigned list.
+8. **Session Settings** (vueportal `5e32090` + login fix `3742574`; React
+   `ff3ca03`, `7f191df`):
+   migrate `database/migrations/new/2026_10_24_100000_create_session_settings_table.php`
+   by path, deploy the code, `npm run prod` in vueportal (its Vue idle
+   timer changed; `idle-vue` is no longer used). No seeder: no row = the
+   defaults (60 min idle, 8 h duration). Tokens issued from now on carry a
+   24 h expiry (the ceiling); the real limit is the setting. Administrator
+   only: React Set Up & Authorizations → Session Settings, Vue Set Up &
+   Authorizations → Settings → Session Settings.
 
 ## Pick up here — left to do (saved 2026-10-11)
 
