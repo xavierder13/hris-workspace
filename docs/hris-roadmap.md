@@ -144,28 +144,35 @@ Module rules live in each repo's skills:
    24 h expiry (the ceiling); the real limit is the setting. Administrator
    only: React Set Up & Authorizations → Session Settings, Vue Set Up &
    Authorizations → Settings → Session Settings.
-9. **Company Asset + Offboarding Clearance** (built 2026-10-19, not yet
-   committed / pushed; vueportal + React; skills `company-asset` in
-   vueportal, `clearance` in reactjs-ant-design). Company Asset is the
-   `F-Asset-Management` commit `6edd681` brought onto `F-HRIS-Staging`.
-   Migrate **by file path**, in this order:
+9. **Company Asset + Offboarding Clearance** (built 2026-10-19; pushed —
+   vueportal `8507291` on `F-HRIS-Staging`, React `39113db`; skills
+   `company-asset` in vueportal, `clearance` in reactjs-ant-design). Company
+   Asset is the `F-Asset-Management` commit `6edd681` brought onto
+   `F-HRIS-Staging`. **Done locally 2026-10-19** (migrations, seeders,
+   `npm run prod`). Migrate **by file path**, in this order:
    `2026_10_06_100000_create_asset_categories_table`,
    `2026_10_06_100001_create_company_assets_table`,
    `2026_10_06_100002_create_company_asset_assignment_histories_table`,
    `2026_10_07_100000_add_acquisition_and_disposal_fields_to_company_assets_table`,
    `2026_10_07_100001_create_company_asset_maintenance_logs_table`, then
-   `2026_10_25_100000` … `2026_10_25_100010` (clearance tables, the Other separation's Specify, checklist categories / items, HR / Payroll checkpoints, per-clearance in-charge). Deploy
-   the code, `composer dump-autoload`, `PermissionSeeder` (8
-   `company-asset-*` + 11 `clearance-*`), `CompanyAssetRoleSeeder` (Asset
-   Custodian role), **`ClearanceModuleSeeder`** (required — the "Employee
-   Clearance" module the Access Chart picks), `ClearanceSetupSeeder`
-   (start-up departments, categories, 20 checklist items; set standard
-   charges afterwards on Clearance Setup → Checklist Items), `npm run prod` in vueportal (Vue Asset Management menu),
-   React build. Then: Clearance Setup → add each department's signatories;
-   Approvals → Access Charts → a "Clearance" chart (Module: Employee
-   Clearance) with its levels and approvers for the final approval (Lady,
-   Malou); give HR `clearance-verify` and Payroll `clearance-payroll`
-   (none = cleared once every department signs); grant the `clearance-*`
+   `2026_10_25_100000` … `2026_10_25_100015` (clearance tables, the Other
+   separation's Specify, checklist categories / items, checkpoints,
+   per-clearance in-charge, clearance templates / branches / components /
+   component items, template steps). Deploy the code, `composer
+   dump-autoload`, `PermissionSeeder` (8 `company-asset-*` + 9
+   `clearance-*`: list, list-all, create, edit, cancel, manage, sign,
+   approve, setup), `CompanyAssetRoleSeeder` (Asset Custodian role, on the
+   Administrator's guard), **`ClearanceModuleSeeder`** (required — the
+   "Employee Clearance" module the Access Chart picks, plus the Clearance
+   Approver role), `ClearanceSetupSeeder` (checklist categories and two
+   templates — Head Office Clearance for ADMINISTRATION, Branch Clearance
+   the default — with their components and checklists; adds only what's
+   missing), `npm run prod` in vueportal (Vue Asset Management menu), React
+   build. Then: Clearance Setup → set the in-charges of the "User"
+   components and the standard charges on each template (until then HR,
+   `clearance-manage`, clears those components); Approvals → Access Charts →
+   a "Clearance" chart (Module: Employee Clearance) with its levels and
+   approvers for the final approval (Lady, Malou); grant the `clearance-*`
    permissions to roles (undecided — see open questions).
 
 10. **My Workspace filings** (built 2026-10-19, uncommitted; vueportal
@@ -675,6 +682,7 @@ Deploy: migrate `2026_10_14_130000` after `110000`.
    - Decided by Claude (user delegated, 2026-10-10): daily-rate factor stays 313; SSS / PhilHealth / Pag-IBIG on the 2nd cut-off, tax every cut-off; overtime minimum 30 min and rounded down per 15 min (Payroll Settings → Overtime, migration `2026_10_15_110000`; vueportal `f5322a4`, React `dd10845`); pre-shift overtime counts when approved.
    - Done 2026-10-10 (vueportal `4b91fa0`/`506a31b`/`5f19b4d`, React `b9c1650`/`b0fa928`/`1447c61`): payroll record imports + Per week + One-time + deduction descriptions + retro Adjustment For; notification bell covers every approval (leave, time entry, overtime, payroll run, 13th month) and payroll deadlines (rule in both CLAUDE.md); self-service My Workspace (My Attendance = own DTR with Bio / Imported / Manual tags, My Payslips range print / Excel pay sheet), filing pages open on All for own-only filers, profile tab 401 fixed; menu regrouped by process, sidebar / navbar redesign.
    - User manual (simple steps, setup → reports; updated 2026-10-11 with bank accounts, the Generate Payroll picker, attendance import for a biometric outage, Other tools and Not available yet; then with Add Employees / approval rounds, rollback before the pay date, 13th month selected employees): Claude Docs "HRIS Payroll — User Manual", https://claude.ai/code/artifact/aa765f8d-62a9-427a-a30b-f53d7c1cbed0 (private until shared). Keep it current when a payroll feature ships.
+   - Roles and permissions reference (every HRIS role: area, purpose, permission count, seeder; every HRIS permission by module with the screen it unlocks; how clearance signing works; seeders and their re-run behaviour; open grants; 2026-10-19): Claude Docs "HRIS Roles and Permissions", https://claude.ai/code/artifact/0086b4f9-e9ab-4308-9840-f31765b390af (private until shared). Keep it current when a role or permission is added.
    - Dashboards explanation (every section of the Workforce, Recruitment and KPI Dashboards — what it shows and how each number is computed; 2026-10-11): Claude Docs "HRIS Dashboards — Features and Computations", https://claude.ai/code/artifact/0fdf02e1-dc82-436d-8340-c5589eeeeeba (private until shared). Payroll column explanations: test-scenarios/payroll-column-reference.docx/.pdf. Keep both current when a dashboard section or payroll view changes.
 2. **Known limits to tell the user:**
    - Groups, reports and pay sheet subtotals use the employee's **current** branch / position (payslips keep no branch).
@@ -862,12 +870,12 @@ Found while building payroll records; none is applied yet.
 ### Later (agreed, not scheduled)
 
 - **News posting:** all users view, by permission.
-- **Company Asset:** backend brought onto `F-HRIS-Staging` 2026-10-19 (deploy step 9; Clearance lists the assets still assigned). React page built 2026-10-19 (`/company-assets`, uncommitted). Possible next: an Assets tab on the employee profile (`employee_assets/{id}`).
+- **Company Asset:** backend brought onto `F-HRIS-Staging` 2026-10-19 (deploy step 9; Clearance lists the assets still assigned). React page built 2026-10-19 (`/company-assets`, pushed `3701ba9`). Possible next: an Assets tab on the employee profile (`employee_assets/{id}`).
 - **KPI template versioning:** see `kpi-template-versioning-plan.md`.
 
 ## Open questions to ask the user
 
-- Clearance role grants: who gets `clearance-list-all` / `-create` / `-edit` / `-cancel` / `-manage` (HR), `-sign` (department signatories and every manager who is an immediate head), `-approve` (final approvers), `-setup`?
+- Clearance role grants: who gets `clearance-list` / `-list-all` / `-create` / `-edit` / `-cancel` / `-manage` (HR), `-sign` (in-charges who sign a component, and every manager who is an immediate head), `-approve` (final approvers; the seeded Clearance Approver role has list + approve), `-setup`?
 - Later (agreed 2026-10-19): My Clearance in My Workspace, and one Approvals inbox (tabs per module).
 - Clearance: should the departing employee see their own clearance progress (My Workspace)? Not built; `scopeVisible` already includes a linked account's own clearance, but `clearance/show` needs `clearance-list` (a My Workspace page would need its own endpoint).
 - Clearance: hard-block Final Pay until Cleared, or keep the warning (built)?
