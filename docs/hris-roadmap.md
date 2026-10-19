@@ -144,6 +144,42 @@ Module rules live in each repo's skills:
    24 h expiry (the ceiling); the real limit is the setting. Administrator
    only: React Set Up & Authorizations → Session Settings, Vue Set Up &
    Authorizations → Settings → Session Settings.
+9. **Company Asset + Offboarding Clearance** (built 2026-10-19, not yet
+   committed / pushed; vueportal + React; skills `company-asset` in
+   vueportal, `clearance` in reactjs-ant-design). Company Asset is the
+   `F-Asset-Management` commit `6edd681` brought onto `F-HRIS-Staging`.
+   Migrate **by file path**, in this order:
+   `2026_10_06_100000_create_asset_categories_table`,
+   `2026_10_06_100001_create_company_assets_table`,
+   `2026_10_06_100002_create_company_asset_assignment_histories_table`,
+   `2026_10_07_100000_add_acquisition_and_disposal_fields_to_company_assets_table`,
+   `2026_10_07_100001_create_company_asset_maintenance_logs_table`, then
+   `2026_10_25_100000` … `2026_10_25_100010` (clearance tables, the Other separation's Specify, checklist categories / items, HR / Payroll checkpoints, per-clearance in-charge). Deploy
+   the code, `composer dump-autoload`, `PermissionSeeder` (8
+   `company-asset-*` + 11 `clearance-*`), `CompanyAssetRoleSeeder` (Asset
+   Custodian role), **`ClearanceModuleSeeder`** (required — the "Employee
+   Clearance" module the Access Chart picks), `ClearanceSetupSeeder`
+   (start-up departments, categories, 20 checklist items; set standard
+   charges afterwards on Clearance Setup → Checklist Items), `npm run prod` in vueportal (Vue Asset Management menu),
+   React build. Then: Clearance Setup → add each department's signatories;
+   Approvals → Access Charts → a "Clearance" chart (Module: Employee
+   Clearance) with its levels and approvers for the final approval (Lady,
+   Malou); give HR `clearance-verify` and Payroll `clearance-payroll`
+   (none = cleared once every department signs); grant the `clearance-*`
+   permissions to roles (undecided — see open questions).
+
+10. **My Workspace filings** (built 2026-10-19, uncommitted; vueportal
+   `MyFilingController` + `my_filing` routes, own-exclusion in the leave /
+   time-entry / overtime lists, `PayrollRoleSeeder`; React
+   `src/pages/my_workspace/`). No migration. Deploy the code, then take
+   `leave-list`, `time-entry-list`, `overtime-list` and `leave-balance-list`
+   off the **Employee Self-Service** role (done locally 2026-10-19) (Set Up → Roles, or run `PayrollRoleSeeder` — it
+   re-syncs every payroll job role to the seeder's lists, so check for
+   hand-made changes first). Approvers keep their *-list /
+   leave-balance-list through the approver roles. New view-only role
+   **Time & Leave Viewer** (seeder; created locally): everyone's leave, time
+   entries, overtime and leave balances, no actions — assign it on User
+   Accounts.
 
 ## Pick up here — left to do (saved 2026-10-11)
 
@@ -826,11 +862,15 @@ Found while building payroll records; none is applied yet.
 ### Later (agreed, not scheduled)
 
 - **News posting:** all users view, by permission.
-- **Company Asset:** port from vueportal branch `F-Asset-Management` (cherry-pick `6edd681`).
+- **Company Asset:** backend brought onto `F-HRIS-Staging` 2026-10-19 (deploy step 9; Clearance lists the assets still assigned). React page built 2026-10-19 (`/company-assets`, uncommitted). Possible next: an Assets tab on the employee profile (`employee_assets/{id}`).
 - **KPI template versioning:** see `kpi-template-versioning-plan.md`.
 
 ## Open questions to ask the user
 
+- Clearance role grants: who gets `clearance-list-all` / `-create` / `-edit` / `-cancel` / `-manage` (HR), `-sign` (department signatories and every manager who is an immediate head), `-approve` (final approvers), `-setup`?
+- Later (agreed 2026-10-19): My Clearance in My Workspace, and one Approvals inbox (tabs per module).
+- Clearance: should the departing employee see their own clearance progress (My Workspace)? Not built; `scopeVisible` already includes a linked account's own clearance, but `clearance/show` needs `clearance-list` (a My Workspace page would need its own endpoint).
+- Clearance: hard-block Final Pay until Cleared, or keep the warning (built)?
 - ~~Approval levels~~ — decided 2026-10-14: the payroll personnel set the number of levels on the access charts. (Locally leave #34 and one time entry are still Pending at a removed level 2.)
 - ~~Who cancels an approved filing~~ — decided and built 2026-10-14 (uncommitted): HR (`*-cancel`, e.g. the Timekeeper role), the owner or the creator (`*-cancel-own` + own record or `filed_by`) and Administrator, Pending or Approved, only while no payroll has paid it or holds it — Administrator included (the old Administrator bypass is gone). Applies to leave, time entry and overtime.
 - Should manual time-entry filing be limited to the filer's subordinates?
