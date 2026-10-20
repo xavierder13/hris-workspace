@@ -213,7 +213,11 @@ Module rules live in each repo's skills:
    `kpi-evaluation-list-all`), `KpiRoleSeeder` (KPI Evaluator / Approver /
    Evaluation Viewer / Self Evaluation / Administrator — Evaluator and
    Approver get `kpi-evaluation-print`), `LeaveBalanceViewerRoleSeeder`
-   (`leave-balance-list`) and `HrisRoleSeeder` (the 13 other HRIS roles
+   (`leave-balance-list`), `EmployeeSelfServiceUserSeeder` (gives Employee
+   Self-Service — file / edit / cancel own leave, time entries, overtime —
+   and KPI Self Evaluation to every active account linked to an active
+   employee; User Accounts assigns both when an employee is linked; rerun
+   after linking accounts outside the form) and `HrisRoleSeeder` (the 13 other HRIS roles
    set up by hand: HRIS Administrator, Recruitment, Employees Relation,
    managers, Employee Deactivator, Branch / Department / Position
    Maintenance). The seeders create a
