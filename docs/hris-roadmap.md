@@ -208,6 +208,20 @@ Module rules live in each repo's skills:
    nightly jobs' lists, run by hand); the bell's To be deactivated / To be
    regularized open them. Open: 657 older regularization dates aren't
    Direct Hire Since + 180 (warning icon) — recalculate or keep (ask).
+13. **KPI visibility by branch + HRIS role seeders** (pushed 2026-10-20:
+   vueportal `5056e82`, `f6e9b43`; React `aeac8d1`). `composer dump-autoload`, then `PermissionSeeder` (new
+   `kpi-evaluation-list-all`), `KpiRoleSeeder` (KPI Evaluator / Approver /
+   Evaluation Viewer / Self Evaluation / Administrator — Evaluator and
+   Approver get `kpi-evaluation-print`), `LeaveBalanceViewerRoleSeeder`
+   (`leave-balance-list`) and `HrisRoleSeeder` (the 13 other HRIS roles
+   set up by hand: HRIS Administrator, Recruitment, Employees Relation,
+   managers, Employee Deactivator, Branch / Department / Position
+   Maintenance). The seeders create a
+   missing role and only add permissions (never remove). Give KPI
+   Evaluation Viewer to whoever sees every evaluation. Rule: an evaluator /
+   approver sees and creates for their subordinates in their own branch
+   (head office: every branch). Done locally 2026-10-20 (both seeders run
+   except HrisRoleSeeder — no change needed locally, tested).
 
 ## Pick up here — left to do (saved 2026-10-11)
 
@@ -219,9 +233,8 @@ React `74eb297`, workspace `master`, 2026-10-14; then night-diff hours: vueporta
 lists "Not available yet".
 
 ### Next up, in order (from local commit `7860da2`, never pushed before this merge — re-check each item against the sections below; some are done)
-1. **Remaining review findings (section C):** the cancel-own race, the
-   bell's per-user caching, Generate Template's branch / position options
-   for payroll-only roles — no decision needed; `/review-code` after.
+1. **Remaining review findings (section C):** done 2026-10-20 (see C);
+   `/review-code` after.
 2. **Decisions from the user** (each unblocks a build): negative net pay —
    warn, block on submit, or carry over; which banks pay payroll (upload
    formats); My Payslips default range; payroll roles' grants; more than one
@@ -328,26 +341,19 @@ create a portal account with the same email and `jobapplicants-*`.
 ### C. Still to fix / build (details in "To fix" and "Continue here" below)
 Code review of the 2026-10-09/10 work (2026-10-11):
 - Done: HIGH preview data leak fixed (vueportal `5a54298`).
-- MEDIUM (suspected) — cancel-own checks "Pending" on a row read before the
-  service lock; an approve at the same moment could let the owner cancel an
-  approved filing. Re-check inside the locked transaction.
-- MEDIUM — the bell rebuilds the whole summary for every user every 5 min
-  (MRFs, payroll runs, NTE / disciplinary index() calls); cache per user
-  1–2 min and use counts.
-- MEDIUM (React) — Generate Template (allowances / deductions /
-  contribution profiles / bank accounts) loads branches / positions from
-  `/employee_master_data/create`, which payroll-only roles may not be
-  allowed → only "ALL" shows. Pass `enabled: open` or use the page's own
-  options.
+- Done 2026-10-20: the bell keeps each user's summary 60 s (its Refresh
+  button rebuilds); Generate Template's Branch / Position / Employees
+  options open to the payroll template permissions; the cancel-own race no
+  longer applies (status and payroll lock are re-checked inside the locked
+  transaction).
 - MEDIUM (React) — My Payslips now defaults to this calendar year with no
   hint (January looks empty); product call: start unfiltered or show the
   range.
 - LOW — pending-filings bell count not user-scoped (count only); imports
-  have no file type / size / row cap; OT night-diff share can be
-  over-credited ≤ 14 min after rounding; My Attendance stale-response race;
-  "My Evaluations" twice in the menu; My Attendance hint names a menu the
-  user may lack; a "Needs Description" type blocks editing old deductions
-  without one.
+  have no file type / size / row cap. Done 2026-10-20: OT night-diff
+  over-credit, My Attendance stale response + hint, "My Evaluations" twice.
+  Not a defect: a "Needs Description" type on an old deduction — the edit
+  form asks for the description.
 - INFO — migration `2026_10_15_110000` gives existing settings a 30-min OT
   minimum / 15-min rounding: changes OT pay after deploy (deliberate — tell
   payroll).
@@ -356,13 +362,10 @@ Other:
 - Daily-rate employees: contribution preview and daily Retro Salary suggestion from the DTR
   (now typed earnings / scheduled days); daily-paid month projection.
 - Bank file vs. the bank's own upload format; Final Pay posts nothing.
-- Salary import's "same employee on line N" numbering (attendance / new
-  imports use the Excel row); Audit Trail can't filter 'imported'.
-- `employeeApi.delete` sends `{ids}` but the backend reads `employee_id`
-  (fix offered, not applied).
-- Future approved leave shows Upcoming instead of On Leave in the DTR;
-  remittance payment log (offered).
-- Pre-existing lint errors in `MainLayout.jsx` (unused `Divider`, `Title`).
+- Done 2026-10-20: salary import errors name the Excel row; Audit Trail
+  filters Imported (and shows no "#null").
+- Done 2026-10-20: a future full-day approved leave shows On Leave in the
+  DTR. Remittance payment log (offered).
 - A payroll whose net pay is negative can be generated and approved with no
   warning (local 2026-07-B: all 5 negative — no attendance in July, so the
   full month's contributions exceed the little gross). Decide: warn / block
@@ -824,34 +827,12 @@ transactions) and a read-only headless Edge check passed.
 ## To fix / follow up on the new features (2026-10-08)
 
 Found while building payroll records; none is applied yet.
-- **Holiday prior-day rule — two gaps (found 2026-10-16, report-only, not
-  fixed):** `DtrService::days()` (~line 313) checks
-  `holiday_pay_needs_prior_day` against `$lastWorkday`, the last scheduled
-  workday seen *within the cut-off*.
-  - **MEDIUM, successive regular holidays:** `'Holiday'` counts as a valid
-    prior day, so an employee absent on the day before Maundy Thursday loses
-    Thursday but is still paid Good Friday. Under the Labor Code IRR they get
-    neither unless they work the first holiday. Fix: carry the first
-    holiday's eligibility forward (treat an ineligible `Holiday` like
-    `Absent`; `Holiday Worked` stays eligible).
-  - **LOW, holiday on the cut-off's first workday:** `$lastWorkday` starts
-    `null`, which counts as eligible, so the day before (in the previous
-    cut-off) is never checked. Fix: seed it from the last scheduled workday
-    before `$from`.
-  - Affects daily-paid employees only (`PayrollRunService` ~line 700). Both
-    are noted for HR in the Payroll Process Flow doc ("Settings explained").
-- **Night-diff hours — open MEDIUM review finding (2026-10-14, awaiting the
-  user's go-ahead):** `PayrollSettingAssignment::FIELDS` gained
-  `night_diff_from / _to`, so `snapshot()` now adds those keys (null) to
-  every assignment row; a run saved before the change has none, and
-  `PayrollRunService::changed()` compares `assignments` whole — Generate
-  Selected / generating around approved payslips on a cut-off with an
-  Active assignment would wrongly say the settings changed. Fix: in
-  `snapshot()` leave the two keys out when null; test against a run made
-  before the migration. Fix before deploying vueportal `fcc9c92`.
-- **Default Schedules** (`GroupScheduleFormModal.jsx:156`): same greyed
-  "Applies to" Segmented as Assigned Settings had — offered the same fix
-  (React `c5807e8`), user not asked yet.
+- Done 2026-10-20 (setting off = no change): holiday prior-day rule — an
+  unpaid holiday passes the absence on (successive holidays), and a holiday
+  before the cut-off's first work day looks back into the previous cut-off;
+  the night-diff snapshot compare (a run saved before the night-diff hours
+  matches; `fcc9c92` can deploy); Default Schedules "Applies to" as solid
+  buttons.
 - **Verify seeded values** before payroll uses them: SSS / PhilHealth /
   Pag-IBIG / BIR tables (`ContributionTableSeeder`), DOLE premium rates
   (`PayrollSettingSeeder`) and the de minimis limits (RR 11-2018 values —
@@ -880,8 +861,6 @@ Found while building payroll records; none is applied yet.
 - **My Profile Attendance tab** stays hidden for employees without
   `employee-master-data-attendance` (its endpoint needs it); add self-access
   if employees should see their own logs.
-- **Pre-existing lint errors** in `MainLayout.jsx` (unused `Divider`,
-  `Title`).
 - **Reports (phases 9–10):** check the bank file layout against the payroll
   bank's own upload format (generic CSV now: account no., name, amount,
   code, bank, credit date); an account number opened in Excel loses leading
@@ -891,14 +870,14 @@ Found while building payroll records; none is applied yet.
 ### Later (agreed, not scheduled)
 
 - **News posting:** all users view, by permission.
-- **Company Asset:** backend brought onto `F-HRIS-Staging` 2026-10-19 (deploy step 9; Clearance lists the assets still assigned). React page built 2026-10-19 (`/company-assets`, pushed `3701ba9`). Possible next: an Assets tab on the employee profile (`employee_assets/{id}`).
+- **Company Asset:** backend brought onto `F-HRIS-Staging` 2026-10-19 (deploy step 9; Clearance lists the assets still assigned). React page built 2026-10-19 (`/company-assets`, pushed `3701ba9`); Assets tab on the employee profile built 2026-10-20.
 - **KPI template versioning:** see `kpi-template-versioning-plan.md`.
 
 ## Open questions to ask the user
 
 - Clearance role grants: who gets `clearance-list` / `-list-all` / `-create` / `-edit` / `-cancel` / `-manage` (HR), `-sign` (in-charges who sign a component, and every manager who is an immediate head), `-approve` (final approvers; the seeded Clearance Approver role has list + approve), `-setup`?
-- Later (agreed 2026-10-19): My Clearance in My Workspace, and one Approvals inbox (tabs per module).
-- Clearance: should the departing employee see their own clearance progress (My Workspace)? Not built; `scopeVisible` already includes a linked account's own clearance, but `clearance/show` needs `clearance-list` (a My Workspace page would need its own endpoint).
+- Built and pushed 2026-10-20: My Clearance in My Workspace (read-only own progress; vueportal `bdcdfa9`, React `9f5144b`) and the Approvals inbox (`/approvals`, a tab per module, counts match the bell; vueportal `81f2295`, React `82862a6`). No migrations.
+- ~~Departing employee sees their own clearance~~ — built 2026-10-20: My Workspace → Clearance (`my_clearance`, read-only).
 - Clearance: hard-block Final Pay until Cleared, or keep the warning (built)?
 - ~~Approval levels~~ — decided 2026-10-14: the payroll personnel set the number of levels on the access charts. (Locally leave #34 and one time entry are still Pending at a removed level 2.)
 - ~~Who cancels an approved filing~~ — decided and built 2026-10-14 (uncommitted): HR (`*-cancel`, e.g. the Timekeeper role), the owner or the creator (`*-cancel-own` + own record or `filed_by`) and Administrator, Pending or Approved, only while no payroll has paid it or holds it — Administrator included (the old Administrator bypass is gone). Applies to leave, time entry and overtime.
