@@ -226,6 +226,13 @@ Module rules live in each repo's skills:
    approver sees and creates for their subordinates in their own branch
    (head office: every branch). Done locally 2026-10-20 (both seeders run
    except HrisRoleSeeder — no change needed locally, tested).
+14. **My Workspace only for linked / self-service accounts** (React
+   `MainLayout.jsx`, `ProtectedRoute.jsx`, `AppRoutes.jsx` — menu, search and
+   the `/my-*`, `/my-evaluations`, `/approvals` routes need `employee_id` or
+   the Employee Self-Service role; pushed 2026-10-20: React `15376be`, vueportal `af19896`). Deploy React, then
+   run `PayrollAssistantTopicSeeder` again (adds `payslip-not-visible`;
+   existing codes kept). No migration. Backend endpoints not gated by this
+   rule.
 
 ## Pick up here — left to do (saved 2026-10-11)
 
