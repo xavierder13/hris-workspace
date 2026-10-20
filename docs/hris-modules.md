@@ -41,6 +41,7 @@ either way, ask if it matters for a task.
 | — Branch Assignment Position | `EmployeeBranchAssignmentPositionController`, prefix `employee_master_data/branch_assignment_position` | Performance Management tab |
 | — Merit History | `EmployeeMeritHistoryController`, prefix `employee_master_data/merit_history` | Performance Management tab |
 | — Training (employee's own history) | `EmployeeTrainingController`, prefix `employee_master_data/training` | Performance Management tab |
+| — Regularization Interviews | `EmployeeRegularizationInterviewController` + `RegularizationService`, prefix `employee_master_data/regularization_interview` — one row per interviewer; the final interview decides Passed / Failed; regularization date always Direct Hire Since + 180; `overdue_deactivation` / `overdue_regularization` (+ `/run`) list and run the two nightly jobs by hand | Evaluation & Regularization sub-tab; `lists/OverdueDeactivation.jsx`, `lists/OverdueRegularization.jsx` |
 | — NTE (Notice to Explain) | `EmployeeNTEController`, prefix `employee_master_data/nte` | Disciplinary tab |
 | — Disciplinary | `EmployeeDisciplinaryController`, prefix `employee_master_data/disciplinary` | Disciplinary tab |
 | — Offboarding | `EmployeeOffboardingController`, prefix `employee_master_data/offboarding` | Offboarding tab (authoritative offboarding source) |
@@ -93,8 +94,14 @@ MRF and also by non-HR modules like Marketing Event), Activity Log /
 Audit Trail (`ActivityLogController`, `activity_logs`, `activity-logs`
 permission — spatie/laravel-activitylog's `activity_log`; models with
 `App\Traits\AuditsActivity` log every add / edit / delete with the user and
-old / new values: Leave, Attendance and Payroll records today, so a new
-HR record that needs a trail adds the trait; React page
+old / new values: Employee Master Data (the record and its tabs, module
+Employee), Leave, Attendance and Payroll records, so a new HR record that
+needs a trail adds the trait; recruitment changes HRIS users make through
+the careers gateway are logged as `Careers\*` records; changes portal staff
+make in the careers portal itself are logged there (its own
+`App\Traits\AuditsActivity`, skipped for gateway requests) and read
+through the gateway (`activity_logs/careers_audit_trail` → gateway
+`audit_trail`, the page's Careers portal view); React page
 `src/pages/audit_trail/`, the Vue Activity Logs page reads the old
 `index`), Email
 (`EmailController`, `email`). Frontend: `authStore.js`, `useAuth.js`,

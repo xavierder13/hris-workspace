@@ -187,6 +187,26 @@ Module rules live in each repo's skills:
    **Time & Leave Viewer** (seeder; created locally): everyone's leave, time
    entries, overtime and leave balances, no actions — assign it on User
    Accounts.
+11. **Audit trail: Employee Master Data + careers portal** (built 2026-10-20,
+   uncommitted; vueportal, recruitment-portal, React). **Careers portal
+   first:** run `database/migrations/2026_10_20_120000_fix_activity_log_id_auto_increment.php`
+   by path **before** deploying the portal code — the imported
+   `activity_log` table has no AUTO_INCREMENT locally (check production
+   with `SHOW CREATE TABLE activity_log`); without it every portal staff
+   save fails once logging is on. Then deploy the portal, then vueportal and
+   React. No vueportal migration or permission (uses `activity-logs`).
+12. **Regularization interviews + computed regularization date + Overdue
+   lists** (built 2026-10-20, uncommitted; vueportal, React). Migration by
+   path `database/migrations/new/2026_10_26_100000_create_employee_regularization_interviews_table.php`
+   **with** the code (copies each employee's single interview into the new
+   list). `PermissionSeeder` (new `employee-master-data-evaluation-regularization-delete`)
+   and grant it with the -create / -edit holders. Rules: the regularization
+   date is always Direct Hire Since + 180 (never typed, Import Data ignores
+   its column); the final interview (latest date) decides Passed / Failed.
+   New pages Employee → Overdue Deactivation / Overdue Regularization (the
+   nightly jobs' lists, run by hand); the bell's To be deactivated / To be
+   regularized open them. Open: 657 older regularization dates aren't
+   Direct Hire Since + 180 (warning icon) — recalculate or keep (ask).
 
 ## Pick up here — left to do (saved 2026-10-11)
 
