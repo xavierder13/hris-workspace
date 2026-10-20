@@ -237,7 +237,7 @@ lists "Not available yet".
    `/review-code` after.
 2. **Decisions from the user** (each unblocks a build): negative net pay —
    warn, block on submit, or carry over; which banks pay payroll (upload
-   formats); My Payslips default range; payroll roles' grants; more than one
+   formats); payroll roles' grants; more than one
    employer company; restore level 2 on the Leave / Time Entry charts
    (open questions at the end).
 3. **Browser test pass** on a device with Edge + puppeteer (vueportal
@@ -346,9 +346,9 @@ Code review of the 2026-10-09/10 work (2026-10-11):
   options open to the payroll template permissions; the cancel-own race no
   longer applies (status and payroll lock are re-checked inside the locked
   transaction).
-- MEDIUM (React) — My Payslips now defaults to this calendar year with no
-  hint (January looks empty); product call: start unfiltered or show the
-  range.
+- Decided 2026-10-20: My Payslips defaults to the current year; when that
+  hides older payslips the empty list names the range and how many are
+  outside it.
 - LOW — pending-filings bell count not user-scoped (count only); imports
   have no file type / size / row cap. Done 2026-10-20: OT night-diff
   over-credit, My Attendance stale response + hint, "My Evaluations" twice.
