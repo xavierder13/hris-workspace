@@ -187,8 +187,8 @@ Module rules live in each repo's skills:
    **Time & Leave Viewer** (seeder; created locally): everyone's leave, time
    entries, overtime and leave balances, no actions — assign it on User
    Accounts.
-11. **Audit trail: Employee Master Data + careers portal** (built 2026-10-20,
-   uncommitted; vueportal, recruitment-portal, React). **Careers portal
+11. **Audit trail: Employee Master Data + careers portal** (pushed 2026-10-20:
+   vueportal `2a1ad6d`, recruitment-portal `ff0ed19`, React `15f804c`). **Careers portal
    first:** run `database/migrations/2026_10_20_120000_fix_activity_log_id_auto_increment.php`
    by path **before** deploying the portal code — the imported
    `activity_log` table has no AUTO_INCREMENT locally (check production
@@ -196,7 +196,8 @@ Module rules live in each repo's skills:
    save fails once logging is on. Then deploy the portal, then vueportal and
    React. No vueportal migration or permission (uses `activity-logs`).
 12. **Regularization interviews + computed regularization date + Overdue
-   lists** (built 2026-10-20, uncommitted; vueportal, React). Migration by
+   lists** (pushed 2026-10-20: vueportal `6729c03`, `ed83584`; React
+   `c7fd2d8`, `25eba97`). Migration by
    path `database/migrations/new/2026_10_26_100000_create_employee_regularization_interviews_table.php`
    **with** the code (copies each employee's single interview into the new
    list). `PermissionSeeder` (new `employee-master-data-evaluation-regularization-delete`)
