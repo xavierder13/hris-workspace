@@ -231,7 +231,7 @@ Module rules live in each repo's skills:
    the `/my-*`, `/my-evaluations`, `/approvals` routes need `employee_id` or
    the Employee Self-Service role; pushed 2026-10-20: React `15376be`, vueportal `af19896`). Deploy React, then
    run `PayrollAssistantTopicSeeder` again (adds `payslip-not-visible`;
-   existing codes kept). No migration. Backend endpoints not gated by this
+   existing codes kept; done locally 2026-10-21, 27 topics). No migration. Backend endpoints not gated by this
    rule.
 15. **Biometric attendance — devices first (live listener + scheduled pull),
    BioBridge only as fallback, one table** (pushed 2026-10-21: vueportal
@@ -258,7 +258,8 @@ Module rules live in each repo's skills:
    running. The server must reach the devices on TCP 4370 24/7. Steps and
    config in the Claude Doc. Live delivery confirmed on Baguio 2026-10-21
    12:48 (a device may send a punch twice — saved once). Open: go-live test
-   with BioBridge running (coexistence unconfirmed).
+   with BioBridge running (coexistence unconfirmed). Done locally 2026-10-21:
+   the three migrations, PermissionSeeder, BiometricDeviceInChargeRoleSeeder.
    BioBridge stopped collecting ~09:00 on 2026-10-21 (all branches).
 16. **Shift late make-up** (pushed 2026-10-21: vueportal `bacd3a4`, React
    `fb30500`; vueportal
@@ -270,6 +271,7 @@ Module rules live in each repo's skills:
    copy of REG-0800-1700). Found while checking Xavier De Guzman's
    2026-10-A: hand-typed Work Schedules (no shift) carry break 0, so every
    break is over-break — fix by giving employees Work Schedules with a shift.
+   Migration done locally 2026-10-21.
 17. **Withholding tax whole-peso rounding** (pushed 2026-10-21: vueportal
    `95e6549`, React `ba56a93`; no migration). Payroll Settings → General → Statutory deductions → Withholding
    Tax centavos → "Rounded to the whole peso" (`Peso`, tax only). Local
@@ -281,7 +283,14 @@ Module rules live in each repo's skills:
    `Unassigned` filter, `PermissionSeeder`). Deploy: `PermissionSeeder`
    (new `employee-master-data-asset-assignment`), then grant it to the HR
    roles that should see the tab (none granted yet; Administrator has it).
-   No migration.
+   No migration. PermissionSeeder done locally 2026-10-21.
+19. **Menu regrouping** (2026-10-21; React `MainLayout.jsx`, vueportal bell
+   text + assistant topic). Payroll Cut-offs → Payroll → Setup; Vacancies →
+   Employee → Workforce Reports as Headcount Vacancies; Recruitment → Setup
+   items named Careers Positions / Ranks / Branches; Set Up → Approval Setup
+   (own menu key). Deploy React and vueportal. No migration or seeder; the
+   saved assistant topic `submit-approve` keeps the old "Approvals → Access
+   Charts" wording until edited (seeder keeps existing codes).
 
 ## Pick up here — left to do (saved 2026-10-11)
 
