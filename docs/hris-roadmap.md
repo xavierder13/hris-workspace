@@ -275,6 +275,13 @@ Module rules live in each repo's skills:
    Tax centavos → "Rounded to the whole peso" (`Peso`, tax only). Local
    setting left at Round — choose Peso to match the old payroll, then
    regenerate draft runs (all employees — settings changed).
+18. **Edit Employee → Asset Assignment tab** (pushed 2026-10-21: vueportal
+   `67d3fc4`, React `2a66522`; React `AssetAssignmentTab.jsx`, `employeeTabItems.jsx`, `EmployeeTabs.jsx`;
+   vueportal `CompanyAssetMaintenance`, `CompanyAssetController` index
+   `Unassigned` filter, `PermissionSeeder`). Deploy: `PermissionSeeder`
+   (new `employee-master-data-asset-assignment`), then grant it to the HR
+   roles that should see the tab (none granted yet; Administrator has it).
+   No migration.
 
 ## Pick up here — left to do (saved 2026-10-11)
 
