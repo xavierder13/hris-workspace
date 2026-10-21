@@ -233,6 +233,48 @@ Module rules live in each repo's skills:
    run `PayrollAssistantTopicSeeder` again (adds `payslip-not-visible`;
    existing codes kept). No migration. Backend endpoints not gated by this
    rule.
+15. **Biometric attendance — devices first (live listener + scheduled pull),
+   BioBridge only as fallback, one table** (pushed 2026-10-21: vueportal
+   `b1aeddf`, React `a7fca0a`).
+   User decisions: `biometric_device_logs` is the one basis for the DTR,
+   payroll and attendance screens (from 2026-01-01); the devices are the main
+   feed — real-time listener, a scheduled pull of the devices not live
+   (interval 3/5/10/15/30/60 min on the page, default 15, Administrator only),
+   Pull all devices (background round with progress) and Pull now; BioBridge is a fallback, automatic (every 5 min, only devices
+   whose feed has a problem: failed, no OK pull for one interval + 5 min,
+   never pulled) and
+   manual (Fetch from BioBridge per device), saving a punch only when that
+   employee code + second isn't recorded; turning the fallback off is
+   Administrator only; role Biometric Device In-Charge (list + pull). Menu:
+   Set Up & Authorizations → Biometric Devices. Deploy:
+   migrate by path `2026_10_27_100000`, `2026_10_27_100001`,
+   `2026_10_27_100002`; `PermissionSeeder`; `composer dump-autoload` +
+   `BiometricDeviceInChargeRoleSeeder`; `php artisan biometric:copy-biobridge`
+   once (~1.5 min; until it finishes readers use BioBridge directly); the
+   `schedule:run` cron (step 7); `php artisan biometric:pull-devices` once;
+   Supervisor program for `php artisan biometric:listen`
+   (`/etc/supervisor/conf.d/biometric-listener.conf`, restart on every
+   deploy) after a one-device go-live test at a busy hour with BioBridge
+   running. The server must reach the devices on TCP 4370 24/7. Steps and
+   config in the Claude Doc. Live delivery confirmed on Baguio 2026-10-21
+   12:48 (a device may send a punch twice — saved once). Open: go-live test
+   with BioBridge running (coexistence unconfirmed).
+   BioBridge stopped collecting ~09:00 on 2026-10-21 (all branches).
+16. **Shift late make-up** (pushed 2026-10-21: vueportal `bacd3a4`, React
+   `fb30500`; vueportal
+   `ShiftController`, `Shift`, `ScheduleService`, `DtrService`, migration
+   `2026_10_27_100003` — run by path; React `ShiftFormModal`, `ShiftIndex`,
+   `shiftHelpers`). A shift setting "Required work (break excluded)": a late
+   day counts no late / over-break when out − in − break taken reaches it.
+   Locked once a shift is assigned → create new shifts with it (e.g. a FLEX
+   copy of REG-0800-1700). Found while checking Xavier De Guzman's
+   2026-10-A: hand-typed Work Schedules (no shift) carry break 0, so every
+   break is over-break — fix by giving employees Work Schedules with a shift.
+17. **Withholding tax whole-peso rounding** (pushed 2026-10-21: vueportal
+   `95e6549`, React `ba56a93`; no migration). Payroll Settings → General → Statutory deductions → Withholding
+   Tax centavos → "Rounded to the whole peso" (`Peso`, tax only). Local
+   setting left at Round — choose Peso to match the old payroll, then
+   regenerate draft runs (all employees — settings changed).
 
 ## Pick up here — left to do (saved 2026-10-11)
 
