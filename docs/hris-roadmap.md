@@ -282,6 +282,24 @@ Module rules live in each repo's skills:
    (new `employee-master-data-asset-assignment`), then grant it to the HR
    roles that should see the tab (none granted yet; Administrator has it).
    No migration.
+19. **Shift flexible hours** (pushed 2026-10-22: vueportal `2a88915`, React `7a4b118`; vueportal
+   `ShiftController`, `Shift`, `ShiftDay`, `ScheduleService`, `DtrService`,
+   migration `2026_10_27_100004` — run by path, migrated locally; React
+   `ShiftFormModal`, `ShiftIndex`, `shiftHelpers`, `ShiftChip`,
+   `DtrDaysTable`, `timeEntryHelpers`). A shift's "Flexible hours" switch:
+   each work day has no time in / out, only a required work (H:mm, break
+   excluded, per day — e.g. 8:00 Mon–Fri, 4:00 Sat) from any time in. No late
+   (grace 0, no late make-up); short of it = undertime. Locked once assigned,
+   like grace. Limit: a flexible day's punches run 04:00 → next day's start,
+   so overnight flexible work past 04:00 isn't matched.
+20. **Submit Branch Report — own branch only** (pushed 2026-10-22: vueportal
+   `bd2db8e`, React `edb474a`; also React `86a331e`, the employee-list
+   selection bar). Only Administrator / `employee-acknowledgment-reports-all`
+   picks the branch; others get their account's branch read-only, and
+   `store()` refuses another branch (422). No migration or seed. Open: the
+   permission is held only by Administrator, Employee Master Data
+   Administrator and HRIS Administrator — grant it to any other role
+   (e.g. Recruitment & Hiring, Payroll Admin) that should pick a branch.
 
 ## Pick up here — left to do (saved 2026-10-11)
 
