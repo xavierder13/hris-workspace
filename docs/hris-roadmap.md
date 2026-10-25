@@ -251,12 +251,27 @@ Module rules live in each repo's skills:
    `2026_10_27_100002`; `PermissionSeeder`; `composer dump-autoload` +
    `BiometricDeviceInChargeRoleSeeder`; `php artisan biometric:copy-biobridge`
    once (~1.5 min; until it finishes readers use BioBridge directly); the
-   `schedule:run` cron (step 7); `php artisan biometric:pull-devices` once;
-   Supervisor program for `php artisan biometric:listen`
-   (`/etc/supervisor/conf.d/biometric-listener.conf`, restart on every
-   deploy) after a one-device go-live test at a busy hour with BioBridge
-   running. The server must reach the devices on TCP 4370 24/7. Steps and
-   config in the Claude Doc. Live delivery confirmed on Baguio 2026-10-21
+   `schedule:run` cron (step 7 — the same entry runs the BioBridge copy every
+   5 min and the device pull every minute, nothing else to add for auto sync);
+   `php artisan biometric:pull-devices` once;
+   the listener kept alive by a second Webmin cron job (no Supervisor, nothing
+   to install), after a one-device go-live test at a busy hour with BioBridge
+   running:
+   - Check first in Webmin → Others → Command Shell: `which flock` prints a
+     path (util-linux, part of the OS).
+   - Webmin → System → Scheduled Cron Jobs → new job, as the web user, every
+     minute (all fields **All**):
+     `cd /path/to/vueportal && flock -n storage/biometric-listen.lock /usr/bin/php artisan biometric:listen --minutes=60 >> storage/logs/listener.log 2>&1`
+   - `flock -n`: while the listener runs the lock is held and the new run
+     exits; after a crash the next minute starts it again. `--minutes=60`
+     makes it exit hourly so it comes back on the latest code (deploys need
+     no restart; to apply a deploy at once, kill the `biometric:listen`
+     process and cron restarts it within a minute).
+   - A gap while it is down loses nothing: punches stay on the device, it
+     stops being live after 3 min and the scheduled pull (then BioBridge)
+     catches up.
+   The server must reach the devices on TCP 4370 24/7. Steps and config in
+   the Claude Doc (its Supervisor section is replaced by this cron job). Live delivery confirmed on Baguio 2026-10-21
    12:48 (a device may send a punch twice — saved once). Open: go-live test
    with BioBridge running (coexistence unconfirmed).
    BioBridge stopped collecting ~09:00 on 2026-10-21 (all branches).
