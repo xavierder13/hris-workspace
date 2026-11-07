@@ -23,7 +23,9 @@ verify a claim against the repository before relying on it.
 
 `docs/hris-roadmap.md` holds the agreed next phases (up to payroll), the
 user's decisions for each, pending production deploy steps and open
-questions. Read it before starting HRIS feature work, and keep it current
+questions. It is large: before HRIS feature work, list its headings
+(`grep -n '^#' docs/hris-roadmap.md`) and read only "Where things stand" plus
+the sections for the feature at hand — not the whole file. Keep it current
 when a phase ships. `/roadmap` gives a read-only heads-up of it (what's left,
 decisions waiting on the user, repo / deploy state, suggested next item).
 
@@ -107,6 +109,30 @@ request.
 **Secrets.** Never commit `.env` files, credentials, tokens, database
 dumps, private keys or other secrets — here or in any application repo —
 even if a `.gitignore` doesn't exclude them.
+
+## Claude notes — where things go, and reading only what's needed
+
+Each fact has one home; don't duplicate it elsewhere.
+
+| Kind of fact | Home |
+|---|---|
+| How the user wants work done (preferences, corrections) | auto-memory `feedback` note |
+| Feature status, pending deploy steps, open decisions, next items | `docs/hris-roadmap.md` (not memory) |
+| How a module works now (rules, traps, file map) | the owning repo's module skill, edited in place |
+| Why/when something changed, past bugs, test evidence | the repo's `docs/<module>-history.md`, or the commit message |
+| Repo-wide convention | that repo's `CLAUDE.md` |
+
+- **Memory**: don't create per-feature or per-release progress notes; update
+  the roadmap instead. Before saving, update an existing note rather than add
+  one; delete notes that are superseded. Keep each `MEMORY.md` line short.
+- **Reading**: read a module skill only when touching that module; read
+  `docs/*-history.md` only when the *why* is needed; for any large doc, grep
+  its headings and read the relevant section. Open a memory note only when
+  its index line is relevant to the task.
+- **Writing skills**: current state only, edited in place; keep a skill under
+  ~20 KB — cross-cutting rules and traps stay in `SKILL.md`; lookup material
+  and area-specific sections go to files beside it (e.g. `areas/<area>.md`),
+  listed in a "touching X → read Y" table in `SKILL.md`.
 
 ## Before asking the user
 
