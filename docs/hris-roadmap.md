@@ -316,6 +316,76 @@ Module rules live in each repo's skills:
    Administrator and HRIS Administrator — grant it to any other role
    (e.g. Recruitment & Hiring, Payroll Admin) that should pick a branch.
 
+## hris-api port — HRIS backend on Laravel 13 (started 2026-11-12)
+
+New repo `hris-api/` (Docker, http://localhost:8110): a copy of vueportal's
+HRIS backend on Laravel 13 / PHP 8.4, structure as `sap-b1-api`. Rules and
+the per-module checklist: `hris-api/CLAUDE.md`.
+
+**User decisions (2026-11-12):**
+- **Same API, modern inside** — vueportal's paths / verbs / payloads /
+  responses kept (incl. 200-status validation errors, POST-only MRF), so
+  reactjs-ant-design switches by `VITE_API_BASE_URL` alone. Internals:
+  Form Requests, Services, `app/Models`, Sanctum, spatie `permission:` route
+  middleware instead of `<Module>Maintenance`.
+- **Own database + copy** — its own MySQL; `php artisan hris:copy-legacy`
+  reads vueportal (SELECT only), upserts by id, re-runnable (adds / updates,
+  never deletes).
+- **Phased** — foundation first, then a module group per session.
+- Name / place: `hris-api` inside the workspace.
+
+**Phase 0 — Foundation: BUILT 2026-11-12 (not committed — new repo, no remote).**
+Auth (`auth/login|init|logout`, inactive / invalid credentials as before),
+session idle time / duration (`CheckSessionActivity`, same 401 messages,
+passive header), users / roles / permissions, Session Settings
+(Administrator), Company / Branch / Division / Department / Rank / Position
+(+ headcount per branch, subordinates), PSGC address lookups,
+`AuditsActivity` trait (activitylog v5). Copied: 19 tables (345 users, 57 roles,
+618 permissions, 1,745 role grants, 530 user roles, org + 42,046 barangays).
+24 feature tests pass. Contract check against vueportal (31 calls as user 1):
+21 identical, the rest only expected differences —
+- `auth/init`: no `user.branch.whse_codes` (SAP warehouses; React doesn't read it);
+- `user/index`: `employee` null until Employee Master Data is ported;
+- `web`-guard roles / permissions not copied (1 role, 12 IT-asset / brand permissions — non-HRIS);
+- deliberate fixes: `permission/edit`, `branch/edit`, `position/edit` (and
+  company / rank edit) were 401 for everyone in vueportal (its middleware
+  checks `edit/*`, the route is `edit`) — served here under `<module>-edit`;
+  `user/update_profile/{id}` was open to any signed-in user for **any**
+  account (rename + set password) — here own account or Administrator only;
+  department `division_id` is required (vueportal's rule was malformed and never ran).
+Not ported (non-HRIS): `branch/warehouse_codes`, `auth/register`.
+
+**Next phases, in order** (each: migrations from the live schema, copy
+tables, permission seeder, tests, contract check, then this section):
+1. **Audit Trail + approval engine** — `activity_logs/*` (copy `activity_log`:
+   map v4 `properties.{attributes,old}` → v5 `attribute_changes`, `App\X` →
+   `App\Models\X`), Access Modules / Charts / Approving Officers,
+   `ApprovalProcedure`, notifications bell, Approvals inbox (queries added as
+   modules land).
+2. **Employee Master Data** + its tabs (key performance, ratings, merit,
+   training, regularization, work schedule, NTE / disciplinary, offboarding,
+   files, acknowledgment reports, my profile); then `users.employee_id` FK
+   and the `EmployeeDirectory` stand-in replaced.
+3. **Org-adjacent** — Area Assignment, Holiday Calendar, Hiring Officers,
+   Company Asset, Training library.
+4. **Recruitment gateway + Manpower Request (MRF)**.
+5. **KPI Management** (+ the KPI computation services / SQL).
+6. **Time & Leave** — leave types / leave / balances, shifts, work schedules,
+   shift assignment / group schedules, manual time entries, overtime,
+   biometric devices + `biometric:*` commands and the scheduler, DTR, My
+   Filing, My Attendance.
+7. **Payroll** — settings + assignments, employers, banks / bank accounts,
+   compensation, allowances, contributions + tables, deductions, adjustments,
+   cut-offs, payroll runs, 13th month, reports & compliance, payslips, Payroll
+   Assistant (+ topics seeder).
+8. **Separation** — Clearance (+ setup), offboarding links, final pay.
+9. **Cut-over** — full contract check, React `VITE_API_BASE_URL` → hris-api,
+   browser test pass, production compose / deploy plan, vueportal HRIS
+   routes retired (decision for the user then).
+
+**Open:** remote repository for hris-api (GitHub `xavierder13/hris-api`?) —
+ask before creating; production deploy target.
+
 ## Pick up here — left to do (saved 2026-10-11)
 
 Everything built so far is pushed (vueportal `333fdc1` on `F-HRIS-Staging`,

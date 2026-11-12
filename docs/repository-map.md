@@ -89,6 +89,25 @@ been worked on since.
   - Shared axios instance: `src/api/axiosInstance.js`.
   - Auth/permission helpers: `src/hooks/useAuth.js`, `src/store/authStore.js`.
 
+## hris-api/
+
+- **Detected role(s)**: Laravel API backend — `composer.json`
+  (`laravel/framework` ^13.17), `artisan`, `routes/api.php`; no frontend of
+  its own (skeleton `resources/` unused). Created 2026-11-12 as the HRIS
+  backend rebuilt on current Laravel: a phased copy of vueportal's HRIS side
+  with **the same HTTP API**, so reactjs-ant-design switches by changing
+  `VITE_API_BASE_URL` only. Own git repo (`git init`, no remote yet).
+- **Framework / version**: Laravel 13, PHP 8.4 (Docker), Sanctum tokens on a
+  guard named `api`, spatie/laravel-permission (guard `api`),
+  spatie/laravel-activitylog v5. Structure modeled on `sap-b1-api`
+  (GitHub `xavierder13/sap-b1-api`, not checked out here).
+- **Docker**: `hris_api_app` / `_nginx` (http://localhost:8110) / `_db`
+  (MySQL 8.4, host port 3310) / `_phpmyadmin` (8111). Own database;
+  vueportal's is read only by `php artisan hris:copy-legacy`.
+- **CLAUDE.md**: `hris-api/CLAUDE.md` — the contract rule, Docker commands,
+  conventions, the porting checklist. Port status: roadmap "hris-api port".
+- **Contract check**: `scripts/contract-compare.py` + `contract-endpoints.json`.
+
 ## Integration boundaries
 
 - **API base URL**: frontend's `.env` sets
@@ -114,6 +133,8 @@ been worked on since.
   uses, per both repos' own `CLAUDE.md`.
 
 ---
+
+**hris-api entry added**: 2026-11-12.
 
 **Last generated**: 2026-09-14 by direct review (not the `repository-discovery`
 skill's automated flow) — populated from this session's own extensive work
