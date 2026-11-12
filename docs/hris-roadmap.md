@@ -334,7 +334,7 @@ the per-module checklist: `hris-api/CLAUDE.md`.
 - **Phased** — foundation first, then a module group per session.
 - Name / place: `hris-api` inside the workspace.
 
-**Phase 0 — Foundation: BUILT 2026-11-12 (not committed — new repo, no remote).**
+**Phase 0 — Foundation: BUILT 2026-11-12** (hris-api `be3d3a4`).
 Auth (`auth/login|init|logout`, inactive / invalid credentials as before),
 session idle time / duration (`CheckSessionActivity`, same 401 messages,
 passive header), users / roles / permissions, Session Settings
@@ -355,13 +355,42 @@ passive header), users / roles / permissions, Session Settings
   department `division_id` is required (vueportal's rule was malformed and never ran).
 Not ported (non-HRIS): `branch/warehouse_codes`, `auth/register`.
 
+**Phase 1 — Audit Trail + approval engine: BUILT 2026-11-13.**
+Access Modules / Access Charts (levels, required approvals, access level) /
+Approving Officers (`access_module/*`, `access_chart/*`,
+`access_chart_user_map/*`), `ApprovalProcedure` (vueportal's engine rule for
+rule: hierarchical level 1 by `position_subs` + branch limit, required
+approvals per level, Administrator completes a level, one action per
+approver per filing, no own filing, permission fallback when no chart),
+Audit Trail (`activity_logs/index|audit_trail|audit_trail_options`), the
+bell `notifications/summary` and `approvals/inbox` with an empty source list
+(each module registers its items / tab when ported — same response shape).
+Copied: access_modules 15, access_charts 13, approver_per_levels 26,
+access_chart_user_maps 39, approved_logs 43, access_levels 1, activity_log 622
+(v4 → v5: changes into `attribute_changes`, a deleted record's values as
+`old`, `App\X` → `App\Models\X`). 45 feature tests pass. Contract check:
+access module / chart / level and the validation answers identical; Audit
+Trail 542 entries — same rows, actions, users, fields and values in the same
+order; the only differences: names of not-yet-ported records (employee,
+leave type, shift …) shown as `#id` / `Employee #id`, the record type values
+(`App\Models\X`, which the page reads from `audit_trail_options`), Laravel
+13's extra paginator `links` key and its default validation wording.
+Bell / inbox: empty until their modules are ported (vueportal has items).
+Deliberate differences:
+- `access_chart/update`: a level row sent without its id updates that level
+  (vueportal inserted a duplicate and failed with 500 on the unique index);
+- `access_chart_user_map/update` refuses a duplicate approver at a level, as
+  `store` already did; `access_module/edit` and `access_chart/edit` work
+  (vueportal: 500 / returned the wrong record — React doesn't call them);
+- `access_chart_user_map` index / create / edit not ported (no working
+  method in vueportal);
+- `activity_logs/careers_audit_trail` answers vueportal's "careers portal
+  could not be reached" (422) until the recruitment gateway (phase 4);
+- `activity_logs/index` (old Vue page) returns v5 `attribute_changes` as
+  `properties`.
+
 **Next phases, in order** (each: migrations from the live schema, copy
 tables, permission seeder, tests, contract check, then this section):
-1. **Audit Trail + approval engine** — `activity_logs/*` (copy `activity_log`:
-   map v4 `properties.{attributes,old}` → v5 `attribute_changes`, `App\X` →
-   `App\Models\X`), Access Modules / Charts / Approving Officers,
-   `ApprovalProcedure`, notifications bell, Approvals inbox (queries added as
-   modules land).
 2. **Employee Master Data** + its tabs (key performance, ratings, merit,
    training, regularization, work schedule, NTE / disciplinary, offboarding,
    files, acknowledgment reports, my profile); then `users.employee_id` FK
@@ -383,8 +412,9 @@ tables, permission seeder, tests, contract check, then this section):
    browser test pass, production compose / deploy plan, vueportal HRIS
    routes retired (decision for the user then).
 
-**Open:** remote repository for hris-api (GitHub `xavierder13/hris-api`?) —
-ask before creating; production deploy target.
+**Open:** GitHub repo `xavierder13/hris-api` — agreed 2026-11-12, remote set;
+the user creates the empty repo (no `gh` / token on this device), then
+`git push -u origin master`. Production deploy target.
 
 ## Pick up here — left to do (saved 2026-10-11)
 
