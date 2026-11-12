@@ -389,9 +389,56 @@ Deliberate differences:
 - `activity_logs/index` (old Vue page) returns v5 `attribute_changes` as
   `properties`.
 
+**Phase 2a — Employee Master Data, core record: BUILT 2026-11-13.**
+`employee_master_data/*`: list (search, filters, sort, role scope), form
+options, store (incl. the rows staged on the Add form's tabs, bundled),
+update, delete, files (upload / download / delete), profile picture, My
+Profile, For Regularization / Hired This Month / Resigned (+ exports),
+Employee List export, template, import, resign / rehire, option list,
+referral codes (+ generate), Overdue Deactivation / Regularization (+ run)
+and the two nightly jobs (`employees:deactivate-resigned` 00:05,
+`employees:regularize-passed` 00:10). Schema + data of the employee and every
+tab it loads (18 tables, ~87,000 rows: 3,411 employees, 70,608 key
+performances, 4,623 files …); shifts / shift_days copied for the Work
+Schedule rows (Shifts module = phase 6). 63 tests (now on MySQL, `hris_test`).
+Contract check: the main list (4 searches / filters / sorts), form options,
+My Profile, For Regularization, Hired This Month, referral codes, overdue
+lists and the validation answers identical (every tab row, manager and
+computed column); Resigned identical as a set (1,062 rows; vueportal's order
+among equal resign dates is arbitrary — here id breaks the tie); option list
+the same apart from the order of equal last names. Zero dates come back NULL.
+Deliberate differences / fixes:
+- the list search uses a header's value as a column only when it's a real
+  `employee_master_data` column (vueportal put any value into the SQL — an
+  injection; a computed column gave a 500);
+- `store`: NTE / disciplinary file errors are returned (vueportal computed
+  and dropped them; disciplinary files were checked against the NTE list);
+  empty dates are written NULL, not `''`; all in one transaction;
+- `delete` with an array of ids clears every employee's tab rows (vueportal:
+  the first id's only);
+- Employee List export: the Division Manager scope works (vueportal joined
+  nothing for `divisions.id` — a SQL error); `date_to` is bound, not pasted;
+- key performances' month order works on MySQL 8 (`FIELD()`; vueportal's
+  `STR_TO_DATE` is NULL there), `year` stays a number;
+- export types other than Employee List (Attendance, Branch Manpower, KPI
+  Monitoring) answer 422 "not available yet" until their modules (React only
+  uses Employee List);
+- not here yet: `attendance*` (phase 6), `new_hired` / `sync/new_hired`
+  (phase 4), `branch_manpower/*`, `employee_dashboard`, acknowledgment
+  reports (next, 2b–2d).
+Files: disk `webportal-vue` (vueportal's `/wysiwyg/...` paths); production
+must point `WEBPORTAL_VUE_ROOT` at vueportal's shared folder (and
+`LEGACY_PUBLIC_ROOT` at its `public/` for older uploads).
+
+**Phase 2, still to do:** 2b Performance Management tabs (key performance,
+ratings, branch assignment, merit, training, training programs,
+regularization interviews), 2c NTE / Disciplinary / Offboarding, 2d Work
+Schedule tab, Acknowledgment Reports, Branch Manpower report, employee
+dashboard.
+
 **Next phases, in order** (each: migrations from the live schema, copy
 tables, permission seeder, tests, contract check, then this section):
-2. **Employee Master Data** + its tabs (key performance, ratings, merit,
+2. **Employee Master Data** (2b–2d above) + its tabs (key performance, ratings, merit,
    training, regularization, work schedule, NTE / disciplinary, offboarding,
    files, acknowledgment reports, my profile); then `users.employee_id` FK
    and the `EmployeeDirectory` stand-in replaced.
