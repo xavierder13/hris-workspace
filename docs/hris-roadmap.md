@@ -412,9 +412,8 @@ tables, permission seeder, tests, contract check, then this section):
    browser test pass, production compose / deploy plan, vueportal HRIS
    routes retired (decision for the user then).
 
-**Open:** GitHub repo `xavierder13/hris-api` — agreed 2026-11-12, remote set;
-the user creates the empty repo (no `gh` / token on this device), then
-`git push -u origin master`. Production deploy target.
+**Repo:** GitHub `xavierder13/hris-api`, branch `master` (pushed 2026-11-13).
+**Open:** production deploy target.
 
 ## Pick up here — left to do (saved 2026-10-11)
 
