@@ -517,19 +517,16 @@ Deliberate differences / fixes:
   diffs — every age / tenure / day count is the whole absolute value, as
   vueportal's Carbon 2 (found by the contract check: `avg_age` 34.4 vs 34).
 
-**Phase 2, still to do:** the `users.employee_id` foreign key — 4 users
-linked, none dangling, but `hris:copy-legacy` copies users before
-employees, so the copy order (or FK checks during the copy) must change
-with it. `EmployeeDirectory` (the user screens' light employee read) works
-now that the table exists; replacing it is optional. Not here, by plan:
-`attendance*` (phase 6), `new_hired` / `sync/new_hired` (phase 4).
+**Phase 2 is complete.** `users.employee_id`'s foreign key (ON DELETE SET
+NULL, as vueportal) was already added by 2a's migration; a test now covers
+it (deleting an employee keeps the account, unlinked). `EmployeeDirectory`
+(the user screens' light employee read) stays — it avoids the employee
+model's per-row manager queries. Not here, by plan: `attendance*` (phase 6),
+`new_hired` / `sync/new_hired` (phase 4).
 
 **Next phases, in order** (each: migrations from the live schema, copy
 tables, permission seeder, tests, contract check, then this section):
-2. **Employee Master Data** (2b–2d above) + its tabs (key performance, ratings, merit,
-   training, regularization, work schedule, NTE / disciplinary, offboarding,
-   files, acknowledgment reports, my profile); then `users.employee_id` FK
-   and the `EmployeeDirectory` stand-in replaced.
+2. ~~**Employee Master Data**~~ — done (2a–2d above).
 3. **Org-adjacent** — Area Assignment, Holiday Calendar, Hiring Officers,
    Company Asset, Training library.
 4. **Recruitment gateway + Manpower Request (MRF)**.
