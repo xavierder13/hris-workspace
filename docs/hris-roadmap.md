@@ -524,11 +524,40 @@ it (deleting an employee keeps the account, unlinked). `EmployeeDirectory`
 model's per-row manager queries. Not here, by plan: `attendance*` (phase 6),
 `new_hired` / `sync/new_hired` (phase 4).
 
+**Phase 3 — Org-adjacent: BUILT 2026-11-14.** 101 tests.
+- **Area Assignment** `area/index|create|store|edit/{id}|update/{id}|delete/{id}|assign_employee`
+  (a branch in one area; HR heads per employee, replace-all, active only).
+- **Holiday Calendar** `holiday_calendar/index|store|update/{id}|delete`
+  (one row per branch; branch changes on the audit trail, log Attendance).
+  Copied 21 holidays / 1,890 branch rows. Not ported: `edit`, `import`,
+  `template/download` (no working method in vueportal; React doesn't call them).
+- **Hiring Officers** `hiring_officer/index|create|store|update/{id}|delete/{id}`
+  (eligible: active ADMINISTRATION manager / Top Management / Branch
+  Manager). vueportal has none yet; the picker (68 employees) compared.
+- **Company Asset** `company_asset/*` (14 routes) + `my_asset/index`
+  (asset tags `AST-<year>-<6>` from MAX(), assignment history, return,
+  disposal lock, maintenance log, straight-line `book_value`). vueportal has
+  8 categories and no assets yet — behaviour rests on the tests
+  (`CompanyAssetTest`, incl. the delete-then-recreate tag pass).
+Contract check: every list / form-options / validation / not-found answer
+SAME, apart from Laravel 13's validation wording, vueportal's debug trace
+on a 404, and the order among equal last names in
+`company_asset/employee_options` (same 14 people).
+Deliberate differences / fixes:
+- **`company_asset/update` needs `company-asset-edit`** (vueportal's
+  middleware shared edit's rule, so `company-asset-list` alone could edit);
+- `book_value`: whole months, as vueportal's Carbon 2 (Carbon 3 returns a
+  fraction);
+- the seeders add `careers-update-status` / `careers-update-hiring-details`
+  (the hiring officer list's other permissions; the careers module is phase 4).
+**Training library** (`training/files|user_files|file/*`): not ported —
+only vueportal's own Vue pages use it; React has no screen for it.
+**Decision for the user:** port it anyway, or drop it from the plan.
+
 **Next phases, in order** (each: migrations from the live schema, copy
 tables, permission seeder, tests, contract check, then this section):
 2. ~~**Employee Master Data**~~ — done (2a–2d above).
-3. **Org-adjacent** — Area Assignment, Holiday Calendar, Hiring Officers,
-   Company Asset, Training library.
+3. ~~**Org-adjacent**~~ — done (Training library: decision pending, above).
 4. **Recruitment gateway + Manpower Request (MRF)**.
 5. **KPI Management** (+ the KPI computation services / SQL).
 6. **Time & Leave** — leave types / leave / balances, shifts, work schedules,
