@@ -488,9 +488,41 @@ Deliberate differences / fixes:
 - a record id that doesn't exist on file download / delete answers 404
   (vueportal: a PHP error as `{ error }`).
 
-**Phase 2, still to do:** 2d Work
-Schedule tab, Acknowledgment Reports, Branch Manpower report, employee
-dashboard.
+**Phase 2d — Work Schedule tab, Acknowledgment Reports, Branch Manpower,
+Workforce Dashboard: BUILT 2026-11-13.**
+- `employee_master_data/work_schedule/index|store|update/{id}|delete|import|template/download`
+  (rules: 2a's `WorkScheduleRules`; import in its three layouts; template =
+  text sheet + Shifts reference sheet).
+- `employee_master_data/acknowledgment_reports` (+ `store|view|export|delete`);
+  new tables `employee_acknowledgment_reports` / `_items` (copied: 2 / 37).
+- `employee_master_data/branch_manpower/options|report|export` (service
+  ported as is; R-5 + Detailed sheets). Area Assignment's tables `areas`,
+  `area_branches`, `area_hr_heads` migrated and copied (4 / 68 / 1) for it
+  — the Area module itself stays phase 3.
+- `employee_dashboard/summary` (Workforce Dashboard, `hr-payroll-dashboard`).
+90 tests. Contract check on real data: Branch Manpower options + 4 reports
+(per area / branch / HR head, 17 positions, 90 branches) and every
+validation answer SAME; Work Schedule list and validations SAME;
+Acknowledgment index / view (both reports) SAME; Workforce Dashboard: every
+value identical under 5 filter sets — only the order among equal values in
+its ranked lists differs (vueportal's PHP 7 sort isn't stable; hris-api keeps
+insertion order), and Laravel 13's validation wording.
+Deliberate differences / fixes:
+- **Acknowledgment view / export / delete follow the branch rule** (own
+  branch unless `employee-acknowledgment-reports-all`; vueportal checked it
+  on store only — any report id could be read, exported or deleted);
+  another branch's report answers as not found; `is_active` is required per
+  employee (vueportal: PHP error when missing); store is one transaction;
+- Workforce Dashboard: Carbon 3 (Laravel 13) returns signed fractional
+  diffs — every age / tenure / day count is the whole absolute value, as
+  vueportal's Carbon 2 (found by the contract check: `avg_age` 34.4 vs 34).
+
+**Phase 2, still to do:** the `users.employee_id` foreign key — 4 users
+linked, none dangling, but `hris:copy-legacy` copies users before
+employees, so the copy order (or FK checks during the copy) must change
+with it. `EmployeeDirectory` (the user screens' light employee read) works
+now that the table exists; replacing it is optional. Not here, by plan:
+`attendance*` (phase 6), `new_hired` / `sync/new_hired` (phase 4).
 
 **Next phases, in order** (each: migrations from the live schema, copy
 tables, permission seeder, tests, contract check, then this section):
