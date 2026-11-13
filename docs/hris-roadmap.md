@@ -452,7 +452,43 @@ Deliberate differences / fixes:
   column);
 - each tab's writes run in one transaction.
 
-**Phase 2, still to do:** 2c NTE / Disciplinary / Offboarding, 2d Work
+**Phase 2c — NTE / Disciplinary / Offboarding: BUILT 2026-11-13.**
+`employee_master_data/{nte,disciplinary,offboarding}/store|update/{id}|delete|file_download|file_delete|import|template/download`
+and `nte/index`, `disciplinary/index` (the open-cases queue — React's
+Workforce Dashboard count). One base (`CaseRecordService` /
+`CaseRecordController`): each document is a slot (NTE: notice +
+explanation; disciplinary: one; offboarding: last day, clearance,
+quitclaim), a full slot keeps its file on edit; offboarding add / edit /
+delete keeps the employee's `active` / `date_resigned` and referral codes in
+step (answered as `active`, `date_resigned`). Imports: NTE upsert by
+employee + date issued + NTE code (blank received date keeps the one on
+file; 10-column files accepted), disciplinary firstOrCreate, offboarding
+upsert by employee + last day (8-column files accepted). 81 tests
+(`EmployeeCasesTest`). Contract check: both queues and every validation
+answer SAME (the queues are near-empty in real data — 1 open NTE, 0 open
+disciplinary; the tab lists were compared in 2a); a live create / download /
+delete round trip on hris-api passed.
+Not ported: `offboarding/index` (vueportal filtered on a `status` column
+the table doesn't have — an SQL error — behind `…-offboarding-list`, which
+no role holds) and `offboarding/sync` (a GET that rewrote every
+offboarding from the old employee columns — a one-off legacy migration).
+Deliberate differences / fixes:
+- **file type / size are checked** (vueportal overwrote its own rule and
+  returned the wrong error bag — any file was saved); messages
+  `<NTE File | Explanation File | File | Last Day File | …> type must be …`;
+- **import as a scoped user** works (vueportal: SQL error, unjoined table);
+- an edit with a file for a full slot stores nothing (vueportal wrote an
+  orphan file); a file added on edit gets today's upload date (vueportal
+  kept it empty for NTE / disciplinary);
+- deleting a record whose file is missing on disk deletes it (vueportal
+  answered "File not found." and kept the record forever); a removed file's
+  upload date is NULL (vueportal wrote `''`, refused by MySQL 8);
+- optional dates (`explanation_date`, `transmit_date`, `return_date`,
+  resignation dates) are checked `Y-m-d` (vueportal: SQL error);
+- a record id that doesn't exist on file download / delete answers 404
+  (vueportal: a PHP error as `{ error }`).
+
+**Phase 2, still to do:** 2d Work
 Schedule tab, Acknowledgment Reports, Branch Manpower report, employee
 dashboard.
 
