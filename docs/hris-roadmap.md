@@ -430,9 +430,29 @@ Files: disk `webportal-vue` (vueportal's `/wysiwyg/...` paths); production
 must point `WEBPORTAL_VUE_ROOT` at vueportal's shared folder (and
 `LEGACY_PUBLIC_ROOT` at its `public/` for older uploads).
 
-**Phase 2, still to do:** 2b Performance Management tabs (key performance,
-ratings, branch assignment, merit, training, training programs,
-regularization interviews), 2c NTE / Disciplinary / Offboarding, 2d Work
+**Phase 2b — Performance Management tabs: BUILT 2026-11-13.**
+`employee_master_data/<tab>/store|update/{id}|delete` for key performance
+(+ `import`, `template/download`; delete = a whole year), classroom / OJT
+ratings, branch assignment (+ `agency_names`, `import`,
+`template/download`; the latest row moves the employee's branch / position /
+department and drives employment type), merit history, training, training
+programs, regularization interviews (the final interview copies onto the
+employee and regularizes when due). Permissions were already seeded in 2a.
+72 tests pass (`EmployeeTabsTest`). Contract check: every tab's validation
+answers SAME; the rest of the run unchanged from 2a (only the documented
+differences). Not ported: the tabs' `/index` routes and classroom / OJT
+`import` / `template/download` (no controller method in vueportal — 500).
+Deliberate differences / fixes:
+- Key performance / branch assignment **import as a scoped user** (Branch /
+  Department / Division Manager): vueportal's visibility query named an
+  unjoined table — a SQL error for every scoped user; works here;
+- branch assignment with a branch / position name that isn't registered
+  leaves the employee as is (vueportal: 500); a position with no department
+  keeps the employee's department (vueportal wrote NULL into a NOT NULL
+  column);
+- each tab's writes run in one transaction.
+
+**Phase 2, still to do:** 2c NTE / Disciplinary / Offboarding, 2d Work
 Schedule tab, Acknowledgment Reports, Branch Manpower report, employee
 dashboard.
 
