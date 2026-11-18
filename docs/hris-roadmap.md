@@ -680,10 +680,20 @@ after a password changes in vueportal. **Not verified live:** SAP
 (192.168.1.25) isn't reachable from this device — compute is covered by the
 tests (Attendance class, the V2 / missing-class errors, the decryption).
 
-**Phase 6 — Time & Leave, split:** 6a shifts / shifting / default
-schedules (+ `ScheduleService`); 6b leave, manual time entries, overtime and
-My Filing together (they check each other); 6c biometric devices + jobs,
-attendance logs, DTR, My Attendance.
+**Phase 6 — Time & Leave, split (in dependency order):** 6a shifts /
+shifting / default schedules (+ `ScheduleService`) — done; **6b next:**
+biometric devices (+ `ZkTecoClient`, listener, pull / copy jobs —
+scheduled only behind an env flag, off until cut-over, so hris-api and
+vueportal never pull the same device), `BiometricLogService`, BioBridge copy,
+attendance log import, EMD `attendance` / `attendance/export` /
+`attendance/report` (`getAttendanceLogs`), and the read-only
+`payroll_runs` / `payroll_run_employees` copy (attendance import's locked
+dates, the filings' paid lock); 6c leave, manual time entries, overtime and
+My Filing together (they check each other; payroll pieces they need:
+`markPaid` / `assertNotLocked` / `assertFilingOpen` / `dayType`); 6d DTR,
+My Attendance. Traps found while reading 6b: Carbon 3's signed
+`diffInMinutes` / `diffInDays` (AttendanceLogService::timesOf's 24-hour
+check, BioBridgeCopyService's 31-day check — use absolute values).
 
 **Phase 6a — Shifts, shifting, default schedules: BUILT 2026-11-18.** 144 tests (`ShiftingTest`, 5).
 `shift/*` (pattern CRUD; a used shift keeps its pattern / grace / make-up /
