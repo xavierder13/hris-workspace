@@ -601,11 +601,46 @@ Deliberate differences / fixes:
 (open NTE / disciplinary, regularization, referral codes …) were not
 registered when those modules were ported — still to add (open item).
 
+**Phase 4b — Manpower Request (MRF): BUILT 2026-11-18.** 129 tests (`ManpowerRequestTest`, 12).
+`manpower_request/*` (18 routes, POST only): index / create / store / edit /
+update / submit / approve / reject / return / cancel / delete /
+approval_history / record_hire / line attachment upload · download · delete
+/ hiring + status Excel reports. `ManpowerRequestService` is vueportal's rule
+for rule (its own flow on the shared tables — one Access Chart per type
+`MRF - Replacement | Additional | New Position`, levels read live; level 1
+of Additional / New Position by `position_subs` hierarchy; level-1
+auto-approval on submit; Returned resumes its level, Disapproved restarts;
+the Administrator completes any level alone; MAX()-locked `MRF-<year>-<6>`).
+Tables `manpower_requests`, `_details`, `_detail_hires` migrated + copied
+(7 / 8 / 0). Approvals inbox tab `mrf` (first `InboxSource`) and the bell's
+`mrf_approval` (For approval) + `mrf_overdue` (Recommended, time to fill
+RF 25 / SUP 45 / MGR 60).
+Contract check on real data: index, create, every MRF's edit +
+approval_history (7 each), not-found and every validation answer SAME —
+apart from `last_login` (users signed in after the copy) and Laravel 13's
+wording on `gte`; bell MRF items (1 / 2) and the inbox `mrf` tab identical.
+Live round trip on hris-api: draft created (`MRF-2026-000008`, headcount
+snapshot), opened, submit refused for the missing attachment, deleted.
+Deliberate differences / fixes:
+- **`approval_history/{id}` and `detail/file_download` follow the MRF's
+  visibility rule** (404 as `edit`) — vueportal answered any MRF id / any
+  line's file to anyone with `manpower-request-list`;
+- **line attachment upload / delete: requestor or Administrator only** (as
+  `update`) — vueportal let any `-create` / `-edit` holder change another
+  requestor's attachment;
+- `cancel` re-reads the status under a row lock.
+**Local data note:** the three `MRF - *` charts have no levels or approvers
+in either local database, so a new MRF can't be submitted there ("…approval
+procedure has no levels configured.") — set them up on the Access Chart
+screen before testing in the browser; check production has them.
+**Bell / inbox note:** MRF and Recruitment are the only sources so far
+(see 4a's note).
+
 **Next phases, in order** (each: migrations from the live schema, copy
 tables, permission seeder, tests, contract check, then this section):
 2. ~~**Employee Master Data**~~ — done (2a–2d above).
 3. ~~**Org-adjacent**~~ — done (Training library: decision pending, above).
-4. **Recruitment gateway** — done (4a above); **Manpower Request (MRF)** — next (4b).
+4. ~~**Recruitment gateway + Manpower Request (MRF)**~~ — done (4a, 4b above).
 5. **KPI Management** (+ the KPI computation services / SQL).
 6. **Time & Leave** — leave types / leave / balances, shifts, work schedules,
    shift assignment / group schedules, manual time entries, overtime,
