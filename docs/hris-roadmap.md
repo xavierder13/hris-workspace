@@ -680,6 +680,32 @@ after a password changes in vueportal. **Not verified live:** SAP
 (192.168.1.25) isn't reachable from this device — compute is covered by the
 tests (Attendance class, the V2 / missing-class errors, the decryption).
 
+**Phase 6 — Time & Leave, split:** 6a shifts / shifting / default
+schedules (+ `ScheduleService`); 6b leave, manual time entries, overtime and
+My Filing together (they check each other); 6c biometric devices + jobs,
+attendance logs, DTR, My Attendance.
+
+**Phase 6a — Shifts, shifting, default schedules: BUILT 2026-11-18.** 144 tests (`ShiftingTest`, 5).
+`shift/*` (pattern CRUD; a used shift keeps its pattern / grace / make-up /
+flexible hours and can't be deleted; audit 'Attendance' with the days),
+`shift_assignment/*` (10 routes: shifting with revisions, direct-subordinate
+scope, preview, bulk all-or-nothing, history), `group_schedule/*` (6 routes:
+default schedules / group shifting per company / branch / position, reach
+preview). `ScheduleService` + `GroupScheduleService` as vueportal's (the
+schedule in force: own shifting → group shifting → Work Schedule → group
+default → none). Tables `employee_shift_assignments` (+ `_revisions`),
+`group_schedules` and — read by the shifting form's cut-off picker, owned by
+the Payroll phase — `payroll_cutoffs` migrated + copied (1 / 1 / 0 / 24).
+Contract check on real data: 36 calls (lists, filters, options, history,
+three schedule previews incl. over-31-days / self-relieve / over-a-year,
+candidates, bulk preview / store refusal, default-schedule previews and
+every validation / not-found answer) SAME. No live write round trip
+(shiftings and defaults are never deleted — the tests cover the writes).
+Found by the check (hris-api's own, fixed before commit): a
+`Collection::each()` arrow callback returning `false` stopped the loop
+(`assigned` / `scope_name` missing after the first unused row) — earlier
+phases' `each(fn …)` uses checked, none return false.
+
 **Next phases, in order** (each: migrations from the live schema, copy
 tables, permission seeder, tests, contract check, then this section):
 2. ~~**Employee Master Data**~~ — done (2a–2d above).
