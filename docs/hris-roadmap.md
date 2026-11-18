@@ -554,11 +554,58 @@ Deliberate differences / fixes:
 only vueportal's own Vue pages use it; React has no screen for it.
 **Decision for the user:** port it anyway, or drop it from the plan.
 
+**Phase 4a — Recruitment gateway: BUILT 2026-11-18.** 117 tests (`RecruitmentTest`, 17).
+- `recruitment/*` (26 routes): the eight stage lists (+ this HRIS's
+  `branch_companies`), status count, view applicant, secondary details,
+  update status / hiring details, delete applicant, applicant files
+  (list / upload / download / delete), SMS / email, the six ATS exports,
+  the portal's setup (`setup/{branch|position|rank|job_vacancy}/{action}/{id?}`,
+  `careers-<resource>-<list|create|edit|delete>` checked per action; branch /
+  position lists also open to the job vacancy form), referral-code sync,
+  vacancies (+ export), total active employees. `CareersGateway`:
+  vueportal's — cached service-account token renewed once on a 401,
+  `user_email` + `scope` (`branch` for a non-Administrator Branch Manager),
+  accepted changes on the Audit Trail (log Recruitment, `Careers\*`).
+- `employee_master_data/new_hired` + `sync/new_hired` (`NewHireSyncService`:
+  a Probationary employee `careers-<applicant id>` unless the same name /
+  birth date / gender exists, referral code, "Hired" branch assignment row,
+  sync log). Table `employee_new_hired_sync_logs` migrated + copied (1,842).
+- `activity_logs/careers_audit_trail` now reads the portal's trail.
+- Bell: the Recruitment group (`RecruitmentNotifications`, first source in
+  `NotificationService::SOURCES`): hired applicants to sync + the per-stage
+  "due" counts; left out when the portal can't be reached.
+- Tests never reach a real outside service (`Http::preventStrayRequests()`
+  in `ApiTestCase`).
+Contract check on real data (local portal): every list, view, secondary
+details, file list, setup list, validation and not-found answer SAME
+(26 calls); `employee_master_data/new_hired` and `careers_audit_trail`
+(3 calls) SAME; vacancies identical as a set (716 rows; the order among
+the same position is arbitrary in both); bell Recruitment items identical
+(new_hired 596, initial interview 5, final interview 1, orientation 2). Live
+round trip through hris-api: careers rank created and deleted, both on the
+Audit Trail with user and record id.
+Deliberate differences / fixes:
+- **sync refuses an applicant without a birth date or contract signing
+  date** (422, names them, nothing synced) — vueportal wrote `0000-00-00`,
+  which only its non-strict connection accepted; NOT NULL text columns the
+  portal leaves empty (`school_attended`, …) are written `''` as vueportal
+  stored them;
+- `new_hired` with the portal unreachable answers an empty list
+  (vueportal: a PHP error);
+- `recruitment/new_hired` keeps vueportal's `careers-new-hired`, which no
+  seeder creates — Administrator only, as before (React uses
+  `employee_master_data/new_hired`);
+- not ported: `get_vacancy_duration_details` (compared a position name to
+  an id, hard-coded branch AGOO; nothing calls it).
+**Note:** the bell had no sources before this — phases 2–3's items
+(open NTE / disciplinary, regularization, referral codes …) were not
+registered when those modules were ported — still to add (open item).
+
 **Next phases, in order** (each: migrations from the live schema, copy
 tables, permission seeder, tests, contract check, then this section):
 2. ~~**Employee Master Data**~~ — done (2a–2d above).
 3. ~~**Org-adjacent**~~ — done (Training library: decision pending, above).
-4. **Recruitment gateway + Manpower Request (MRF)**.
+4. **Recruitment gateway** — done (4a above); **Manpower Request (MRF)** — next (4b).
 5. **KPI Management** (+ the KPI computation services / SQL).
 6. **Time & Leave** — leave types / leave / balances, shifts, work schedules,
    shift assignment / group schedules, manual time entries, overtime,
