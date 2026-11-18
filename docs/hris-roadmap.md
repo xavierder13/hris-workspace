@@ -636,12 +636,56 @@ screen before testing in the browser; check production has them.
 **Bell / inbox note:** MRF and Recruitment are the only sources so far
 (see 4a's note).
 
+**Phase 5 — KPI Management: BUILT 2026-11-18.** 139 tests (`KpiTest`, 10).
+`kpi/*` (32 routes, REST verbs as vueportal): settings, behavior criteria,
+templates (+ single items, computation-class list), evaluations (create /
+bulk from the position's active template with weights and caps frozen;
+grade, submit, approver ratings, approve / reject / resubmit, revert —
+Administrator only —, delete draft, auto-compute), the employee picker,
+My Evaluations (+ self-evaluate), reports (consolidated, employee history,
+summary). Visibility: vueportal's `KpiEvaluation::visibleTo` (subordinates
+in the user's branch — head office every branch — + own; list-all /
+template-edit all). Scoring `KpiCalculationService` as is. Auto-grades:
+`KpiComputation/` copied (AccountAnalyst + V2, `resources/sql/kpi/IRDetailed.sql`),
+the engine as vueportal's (all or nothing). Tables: the 9 `kpi_*` (copied:
+1 template / 5 items, 4 evaluations / 16 items / 20 ratings, 5 criteria, 2
+settings) and, read-only for the auto-grades, `sap_databases` /
+`sap_db_branches` (101 / 168, passwords as vueportal encrypted them). Bell
+`kpi_approval` + inbox tab `kpi`.
+Contract check on real data: settings, criteria, templates, computation
+classes, every evaluation (list, filters, 4 details), My Evaluations, the
+three reports and every validation / workflow refusal SAME (65 calls);
+differences only users' `last_login` / `updated_at` (signed in after the
+copy), vueportal's debug trace on a 404, Laravel 13's wording of the
+settings validation `message`, and the employee picker's order among equal
+last names (597 / 41 rows identical as sets). Bell `kpi_approval` (2) and
+the inbox `kpi` tab identical. Live round trip on hris-api: created for the
+Web Developer template, graded, submitted (80.00 = 76 + 4), reverted,
+deleted (rows cascaded).
+Deliberate differences / fixes:
+- **`reports/employee/{id}` and `reports/summary` follow the visibility
+  rule** (vueportal: anyone with `kpi-evaluation-list` read every
+  employee's KPI history; React doesn't call them);
+- bulk create: an unexpected failure is skipped as "Could not create the
+  evaluation. Please try again." (vueportal put the exception text — SQL —
+  in `reason`); template store / update, grade saves, revert, compute's
+  writes and self-evaluate run in one transaction;
+- self-evaluate without `items` / `behavior_ratings` saves nothing
+  (vueportal: a PHP error).
+**Production config for compute:** `CNC_MSSQL_*` (as vueportal's) and
+`LEGACY_APP_KEY` = vueportal's `APP_KEY` (decrypts the copied SAP
+passwords; without it only the V1 classes connect, V2 says "the saved
+password … could not be read"). Re-run `hris:copy-legacy --table=sap_databases`
+after a password changes in vueportal. **Not verified live:** SAP
+(192.168.1.25) isn't reachable from this device — compute is covered by the
+tests (Attendance class, the V2 / missing-class errors, the decryption).
+
 **Next phases, in order** (each: migrations from the live schema, copy
 tables, permission seeder, tests, contract check, then this section):
 2. ~~**Employee Master Data**~~ — done (2a–2d above).
 3. ~~**Org-adjacent**~~ — done (Training library: decision pending, above).
 4. ~~**Recruitment gateway + Manpower Request (MRF)**~~ — done (4a, 4b above).
-5. **KPI Management** (+ the KPI computation services / SQL).
+5. ~~**KPI Management**~~ — done (above).
 6. **Time & Leave** — leave types / leave / balances, shifts, work schedules,
    shift assignment / group schedules, manual time entries, overtime,
    biometric devices + `biometric:*` commands and the scheduler, DTR, My
