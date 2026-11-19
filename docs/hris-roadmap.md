@@ -683,10 +683,7 @@ tests (Attendance class, the V2 / missing-class errors, the decryption).
 **Phase 6 — Time & Leave, split (in dependency order):** 6a shifts /
 shifting / default schedules (+ `ScheduleService`) — done; 6b biometric
 devices, BioBridge copy, attendance log import, EMD attendance — done;
-**6c next:** leave, manual time entries, overtime and
-My Filing together (they check each other; payroll pieces they need:
-`markPaid` / `assertNotLocked` / `assertFilingOpen` / `dayType`); 6d DTR,
-My Attendance. Traps found while reading 6b: Carbon 3's signed
+6c leave, manual time entries, overtime and My Filing — done; **6d next:** DTR, My Attendance. Traps found while reading 6b: Carbon 3's signed
 `diffInMinutes` / `diffInDays` (AttendanceLogService::timesOf's 24-hour
 check, BioBridgeCopyService's 31-day check — use absolute values).
 
@@ -767,6 +764,70 @@ vueportal's biometric schedule / listener off and `BIOMETRIC_SCHEDULE_ENABLED`
 BioBridge is reachable from this device — the client is tested against a
 scripted fake device (frames, 40-byte records, read-only guard).
 
+**Phase 6c — Leave, manual time entries, overtime, My Filing: BUILT 2026-11-19.** 175 tests (`FilingTest`, 9).
+- `leave_type/*` (4), `leave/*` (11: list, form options, show + approval
+  panel + balance, compute preview, balances, balance scope, credits, store,
+  update, approve / disapprove / cancel), `time_entry/*` and `overtime/*`
+  (7 each: list, options, preview, show, store, update, act), `my_filing/{leave|time_entry|overtime}/index|show`.
+- `LeaveService` (day count by the schedule in force + the Holiday Calendar,
+  eligibility, balances with the unpaid split, overlap / full-day-vs-worked
+  rules), `TimeEntryService`, `OvertimeService` (hours across midnight, the
+  16-hour limit, day type), `FilingAccess` (`*-own` permissions), all on
+  `ApprovalProcedure` ("Leave Application" / "Manual Time Entry" /
+  "Overtime" charts; without levels the `*-approve` holder decides).
+  `{action}/{id}` routes use the `filing.act:<prefix>` middleware (approve /
+  disapprove → `-approve`, cancel → `-cancel` | `-cancel-own`).
+- Payroll pieces, as the first methods of their Payroll-phase services:
+  `Payroll\PayrollRunService` (`markPaid`, `lockedIn`, `assertNotLocked`),
+  `PayrollCutoffService::assertFilingOpen` (the cut-off filing switch),
+  `PayrollSettingService::dayType`; `PayPremiumRate::DAY_TYPES` (model only,
+  its table comes with Payroll). The Attendance tab's day rule moved to
+  `Biometrics\AttendanceDayService` (the time entry / overtime preview reads it).
+- Approvals inbox tabs `leave`, `time_entry`, `overtime` and bell items
+  `leave_approval`, `time_entry_approval`, `overtime_approval` (vueportal's order).
+- Tables migrated + copied: `leave_types` 9, `employee_leaves` 11,
+  `employee_leave_credits` 2, `employee_time_entries` 138, `employee_overtimes` 25.
+Contract check on real data (user 1): 53 calls — every list (filters,
+search, for-approval), all 11 leave details, 5 time entries, 4 overtimes,
+form options, compute / preview, balances, My Filing and every validation /
+not-found answer — SAME. Inbox / bell: the leave, time entry and overtime
+tabs and items identical (2 / 2 / 0); the rest differs only by modules not
+ported yet (payroll run, 13th month, clearance) and the open bell items below.
+No deliberate differences. Not here: the bell's `pending_filings_due`
+(Payroll group — comes with phase 7).
+
+**Recruitment (ATS) inside hris-api — option, added 2026-11-19 (user request).**
+Goal: if the user decides on **one backend for everything** (HRIS + ATS) on
+one server, port recruitment-portal's backend into hris-api instead of
+reaching it through the gateway (phase 4a's `CareersGateway`).
+What recruitment-portal is (read 2026-11-19): Laravel 7 / PHP 7.2, its own
+database (51 migrations), ~400 routes; the core is `ApplicantController`
+(3,534 lines — the stage flow: initial / final interview, orientation,
+hiring, hiring details, status updates), `job_applicant/*`,
+`jobapplicant_file/*` (+ thumbnails), `job_vacancy/*` (+ branches),
+`message/*` (SMS / email logs), `public_api/*` (the public careers site:
+vacancies, applying, application-link tokens, referral codes),
+`recruitment_gateway/*` (what hris-api calls today), and its own users /
+roles / branches / positions / ranks / departments / divisions; an embedded
+Vue SPA (admin + the public application form).
+Plan when picked up:
+1. A `Recruitment` module in hris-api: `ApplicantController` (the process
+   flow — one controller per stage group, `RecruitmentFlowService` with the
+   stage rules), vacancies, applicant files, messages; tables migrated +
+   copied from the careers database (`hris:copy-legacy` gains a `careers`
+   connection).
+2. Keep `recruitment/*` paths and answers (React unchanged): `CareersGateway`
+   is swapped for the local service behind the same interface, so the switch
+   is one binding (gateway ↔ local) until cut-over.
+3. The public careers site's endpoints (`public_api/*`) on hris-api, without
+   sign-in, rate-limited.
+**Decisions for the user then:** (a) the careers site's own branches /
+positions / users — merge into the HRIS ones (one list) or keep the
+careers copies; (b) who serves the public application form (keep
+recruitment-portal's Vue front end pointed at hris-api, or a new page);
+(c) when — before or after the payroll phases; (d) file storage for
+applicant uploads on the one server.
+
 **Next phases, in order** (each: migrations from the live schema, copy
 tables, permission seeder, tests, contract check, then this section):
 2. ~~**Employee Master Data**~~ — done (2a–2d above).
@@ -785,6 +846,8 @@ tables, permission seeder, tests, contract check, then this section):
 9. **Cut-over** — full contract check, React `VITE_API_BASE_URL` → hris-api,
    browser test pass, production compose / deploy plan, vueportal HRIS
    routes retired (decision for the user then).
+10. **Optional: Recruitment (ATS) inside hris-api** — see its section
+   above; replaces the gateway if the user chooses one backend.
 
 **Repo:** GitHub `xavierder13/hris-api`, branch `master` (pushed 2026-11-13).
 **Open:** production deploy target.
