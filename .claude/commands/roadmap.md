@@ -9,8 +9,9 @@ it ends with a recommendation and a question.
 
 1. **Find the roadmap.** The workspace keeps it in `docs/` (the root
    `CLAUDE.md` "Current plan" names it; otherwise the `docs/*roadmap*.md`
-   file). Read its "pick up here" / "left to do" section first, then the
-   deploy-pending, "to fix" and "open questions" sections. If `$ARGUMENTS`
+   file). It is short and live-only: read it whole. Open the files its
+   table points to only for the focus that needs them (e.g. `deploy` → the
+   deploy-steps file; a hris-api phase → its port history). If `$ARGUMENTS`
    names a focus, read that part fully and keep the rest to one line each.
    Treat the roadmap as a cache: verify any load-bearing claim (a commit
    pushed, a feature built, a file present) against the repositories before

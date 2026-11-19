@@ -21,13 +21,15 @@ verify a claim against the repository before relying on it.
 
 ## Current plan
 
-`docs/hris-roadmap.md` holds the agreed next phases (up to payroll), the
-user's decisions for each, pending production deploy steps and open
-questions. It is large: before HRIS feature work, list its headings
-(`grep -n '^#' docs/hris-roadmap.md`) and read only "Where things stand" plus
-the sections for the feature at hand — not the whole file. Keep it current
-when a phase ships. `/roadmap` gives a read-only heads-up of it (what's left,
-decisions waiting on the user, repo / deploy state, suggested next item).
+`docs/hris-roadmap.md` (~10 KB) holds the live plan only: where things
+stand, the hris-api port's phases and open items, what's still open in
+vueportal / React, and open questions for the user. Read it before HRIS
+feature work; keep it current when something ships (one line there, detail
+elsewhere). Its table names the files to read only when needed — the
+vueportal production deploy steps (`docs/vueportal-deploy-steps.md`), each
+hris-api phase's detail and deliberate differences
+(`hris-api/docs/port-history.md`), and the archived full roadmap
+(`docs/archive/`). `/roadmap` gives a read-only heads-up of it.
 
 ## Repository boundaries
 
@@ -117,7 +119,9 @@ Each fact has one home; don't duplicate it elsewhere.
 | Kind of fact | Home |
 |---|---|
 | How the user wants work done (preferences, corrections) | auto-memory `feedback` note |
-| Feature status, pending deploy steps, open decisions, next items | `docs/hris-roadmap.md` (not memory) |
+| Feature status, open decisions, next items | `docs/hris-roadmap.md` (not memory) |
+| Pending vueportal production deploy steps | `docs/vueportal-deploy-steps.md` |
+| What each hris-api port phase contains, its deliberate differences | `hris-api/docs/port-history.md` |
 | How a module works now (rules, traps, file map) | the owning repo's module skill, edited in place |
 | Why/when something changed, past bugs, test evidence | the repo's `docs/<module>-history.md`, or the commit message |
 | Repo-wide convention | that repo's `CLAUDE.md` |
