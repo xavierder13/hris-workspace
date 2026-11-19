@@ -315,6 +315,16 @@ Module rules live in each repo's skills:
    permission is held only by Administrator, Employee Master Data
    Administrator and HRIS Administrator — grant it to any other role
    (e.g. Recruitment & Hiring, Payroll Admin) that should pick a branch.
+21. **Careers portal certificate fix — URGENT, Recruitment is down on
+   production** (pushed 2026-11-19: vueportal `fde10cb`). Fixes "Connection
+   refused for URI https://recruitment.addessa.com/…": the portal's new
+   certificate (2026-11-15) isn't trusted by the server's old CA store, so
+   vueportal now ships `resources/certs/cacert.pem`. Deploy: pull, then
+   `php artisan config:clear` (or `config:cache` if production caches
+   config) and `php artisan cache:forget careers_api_token`. **Not**
+   `cache:clear`: that logs everyone out. No migration, seed, composer or npm
+   step. Check: Recruitment → Applicant List loads. Why: vueportal
+   `docs/recruitment-history.md`.
 
 ## Pick up here — left to do (saved 2026-10-11)
 
