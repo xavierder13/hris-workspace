@@ -326,6 +326,428 @@ Module rules live in each repo's skills:
    step. Check: Recruitment → Applicant List loads. Why: vueportal
    `docs/recruitment-history.md`.
 
+## hris-api port — HRIS backend on Laravel 13 (started 2026-11-12)
+
+New repo `hris-api/` (Docker, http://localhost:8110): a copy of vueportal's
+HRIS backend on Laravel 13 / PHP 8.4, structure as `sap-b1-api`. Rules and
+the per-module checklist: `hris-api/CLAUDE.md`.
+
+**User decisions (2026-11-12):**
+- **Same API, modern inside** — vueportal's paths / verbs / payloads /
+  responses kept (incl. 200-status validation errors, POST-only MRF), so
+  reactjs-ant-design switches by `VITE_API_BASE_URL` alone. Internals:
+  Form Requests, Services, `app/Models`, Sanctum, spatie `permission:` route
+  middleware instead of `<Module>Maintenance`.
+- **Own database + copy** — its own MySQL; `php artisan hris:copy-legacy`
+  reads vueportal (SELECT only), upserts by id, re-runnable (adds / updates,
+  never deletes).
+- **Phased** — foundation first, then a module group per session.
+- Name / place: `hris-api` inside the workspace.
+
+**Phase 0 — Foundation: BUILT 2026-11-12** (hris-api `be3d3a4`).
+Auth (`auth/login|init|logout`, inactive / invalid credentials as before),
+session idle time / duration (`CheckSessionActivity`, same 401 messages,
+passive header), users / roles / permissions, Session Settings
+(Administrator), Company / Branch / Division / Department / Rank / Position
+(+ headcount per branch, subordinates), PSGC address lookups,
+`AuditsActivity` trait (activitylog v5). Copied: 19 tables (345 users, 57 roles,
+618 permissions, 1,745 role grants, 530 user roles, org + 42,046 barangays).
+24 feature tests pass. Contract check against vueportal (31 calls as user 1):
+21 identical, the rest only expected differences —
+- `auth/init`: no `user.branch.whse_codes` (SAP warehouses; React doesn't read it);
+- `user/index`: `employee` null until Employee Master Data is ported;
+- `web`-guard roles / permissions not copied (1 role, 12 IT-asset / brand permissions — non-HRIS);
+- deliberate fixes: `permission/edit`, `branch/edit`, `position/edit` (and
+  company / rank edit) were 401 for everyone in vueportal (its middleware
+  checks `edit/*`, the route is `edit`) — served here under `<module>-edit`;
+  `user/update_profile/{id}` was open to any signed-in user for **any**
+  account (rename + set password) — here own account or Administrator only;
+  department `division_id` is required (vueportal's rule was malformed and never ran).
+Not ported (non-HRIS): `branch/warehouse_codes`, `auth/register`.
+
+**Phase 1 — Audit Trail + approval engine: BUILT 2026-11-13.**
+Access Modules / Access Charts (levels, required approvals, access level) /
+Approving Officers (`access_module/*`, `access_chart/*`,
+`access_chart_user_map/*`), `ApprovalProcedure` (vueportal's engine rule for
+rule: hierarchical level 1 by `position_subs` + branch limit, required
+approvals per level, Administrator completes a level, one action per
+approver per filing, no own filing, permission fallback when no chart),
+Audit Trail (`activity_logs/index|audit_trail|audit_trail_options`), the
+bell `notifications/summary` and `approvals/inbox` with an empty source list
+(each module registers its items / tab when ported — same response shape).
+Copied: access_modules 15, access_charts 13, approver_per_levels 26,
+access_chart_user_maps 39, approved_logs 43, access_levels 1, activity_log 622
+(v4 → v5: changes into `attribute_changes`, a deleted record's values as
+`old`, `App\X` → `App\Models\X`). 45 feature tests pass. Contract check:
+access module / chart / level and the validation answers identical; Audit
+Trail 542 entries — same rows, actions, users, fields and values in the same
+order; the only differences: names of not-yet-ported records (employee,
+leave type, shift …) shown as `#id` / `Employee #id`, the record type values
+(`App\Models\X`, which the page reads from `audit_trail_options`), Laravel
+13's extra paginator `links` key and its default validation wording.
+Bell / inbox: empty until their modules are ported (vueportal has items).
+Deliberate differences:
+- `access_chart/update`: a level row sent without its id updates that level
+  (vueportal inserted a duplicate and failed with 500 on the unique index);
+- `access_chart_user_map/update` refuses a duplicate approver at a level, as
+  `store` already did; `access_module/edit` and `access_chart/edit` work
+  (vueportal: 500 / returned the wrong record — React doesn't call them);
+- `access_chart_user_map` index / create / edit not ported (no working
+  method in vueportal);
+- `activity_logs/careers_audit_trail` answers vueportal's "careers portal
+  could not be reached" (422) until the recruitment gateway (phase 4);
+- `activity_logs/index` (old Vue page) returns v5 `attribute_changes` as
+  `properties`.
+
+**Phase 2a — Employee Master Data, core record: BUILT 2026-11-13.**
+`employee_master_data/*`: list (search, filters, sort, role scope), form
+options, store (incl. the rows staged on the Add form's tabs, bundled),
+update, delete, files (upload / download / delete), profile picture, My
+Profile, For Regularization / Hired This Month / Resigned (+ exports),
+Employee List export, template, import, resign / rehire, option list,
+referral codes (+ generate), Overdue Deactivation / Regularization (+ run)
+and the two nightly jobs (`employees:deactivate-resigned` 00:05,
+`employees:regularize-passed` 00:10). Schema + data of the employee and every
+tab it loads (18 tables, ~87,000 rows: 3,411 employees, 70,608 key
+performances, 4,623 files …); shifts / shift_days copied for the Work
+Schedule rows (Shifts module = phase 6). 63 tests (now on MySQL, `hris_test`).
+Contract check: the main list (4 searches / filters / sorts), form options,
+My Profile, For Regularization, Hired This Month, referral codes, overdue
+lists and the validation answers identical (every tab row, manager and
+computed column); Resigned identical as a set (1,062 rows; vueportal's order
+among equal resign dates is arbitrary — here id breaks the tie); option list
+the same apart from the order of equal last names. Zero dates come back NULL.
+Deliberate differences / fixes:
+- the list search uses a header's value as a column only when it's a real
+  `employee_master_data` column (vueportal put any value into the SQL — an
+  injection; a computed column gave a 500);
+- `store`: NTE / disciplinary file errors are returned (vueportal computed
+  and dropped them; disciplinary files were checked against the NTE list);
+  empty dates are written NULL, not `''`; all in one transaction;
+- `delete` with an array of ids clears every employee's tab rows (vueportal:
+  the first id's only);
+- Employee List export: the Division Manager scope works (vueportal joined
+  nothing for `divisions.id` — a SQL error); `date_to` is bound, not pasted;
+- key performances' month order works on MySQL 8 (`FIELD()`; vueportal's
+  `STR_TO_DATE` is NULL there), `year` stays a number;
+- export types other than Employee List (Attendance, Branch Manpower, KPI
+  Monitoring) answer 422 "not available yet" until their modules (React only
+  uses Employee List);
+- not here yet: `attendance*` (phase 6), `new_hired` / `sync/new_hired`
+  (phase 4), `branch_manpower/*`, `employee_dashboard`, acknowledgment
+  reports (next, 2b–2d).
+Files: disk `webportal-vue` (vueportal's `/wysiwyg/...` paths); production
+must point `WEBPORTAL_VUE_ROOT` at vueportal's shared folder (and
+`LEGACY_PUBLIC_ROOT` at its `public/` for older uploads).
+
+**Phase 2b — Performance Management tabs: BUILT 2026-11-13.**
+`employee_master_data/<tab>/store|update/{id}|delete` for key performance
+(+ `import`, `template/download`; delete = a whole year), classroom / OJT
+ratings, branch assignment (+ `agency_names`, `import`,
+`template/download`; the latest row moves the employee's branch / position /
+department and drives employment type), merit history, training, training
+programs, regularization interviews (the final interview copies onto the
+employee and regularizes when due). Permissions were already seeded in 2a.
+72 tests pass (`EmployeeTabsTest`). Contract check: every tab's validation
+answers SAME; the rest of the run unchanged from 2a (only the documented
+differences). Not ported: the tabs' `/index` routes and classroom / OJT
+`import` / `template/download` (no controller method in vueportal — 500).
+Deliberate differences / fixes:
+- Key performance / branch assignment **import as a scoped user** (Branch /
+  Department / Division Manager): vueportal's visibility query named an
+  unjoined table — a SQL error for every scoped user; works here;
+- branch assignment with a branch / position name that isn't registered
+  leaves the employee as is (vueportal: 500); a position with no department
+  keeps the employee's department (vueportal wrote NULL into a NOT NULL
+  column);
+- each tab's writes run in one transaction.
+
+**Phase 2c — NTE / Disciplinary / Offboarding: BUILT 2026-11-13.**
+`employee_master_data/{nte,disciplinary,offboarding}/store|update/{id}|delete|file_download|file_delete|import|template/download`
+and `nte/index`, `disciplinary/index` (the open-cases queue — React's
+Workforce Dashboard count). One base (`CaseRecordService` /
+`CaseRecordController`): each document is a slot (NTE: notice +
+explanation; disciplinary: one; offboarding: last day, clearance,
+quitclaim), a full slot keeps its file on edit; offboarding add / edit /
+delete keeps the employee's `active` / `date_resigned` and referral codes in
+step (answered as `active`, `date_resigned`). Imports: NTE upsert by
+employee + date issued + NTE code (blank received date keeps the one on
+file; 10-column files accepted), disciplinary firstOrCreate, offboarding
+upsert by employee + last day (8-column files accepted). 81 tests
+(`EmployeeCasesTest`). Contract check: both queues and every validation
+answer SAME (the queues are near-empty in real data — 1 open NTE, 0 open
+disciplinary; the tab lists were compared in 2a); a live create / download /
+delete round trip on hris-api passed.
+Not ported: `offboarding/index` (vueportal filtered on a `status` column
+the table doesn't have — an SQL error — behind `…-offboarding-list`, which
+no role holds) and `offboarding/sync` (a GET that rewrote every
+offboarding from the old employee columns — a one-off legacy migration).
+Deliberate differences / fixes:
+- **file type / size are checked** (vueportal overwrote its own rule and
+  returned the wrong error bag — any file was saved); messages
+  `<NTE File | Explanation File | File | Last Day File | …> type must be …`;
+- **import as a scoped user** works (vueportal: SQL error, unjoined table);
+- an edit with a file for a full slot stores nothing (vueportal wrote an
+  orphan file); a file added on edit gets today's upload date (vueportal
+  kept it empty for NTE / disciplinary);
+- deleting a record whose file is missing on disk deletes it (vueportal
+  answered "File not found." and kept the record forever); a removed file's
+  upload date is NULL (vueportal wrote `''`, refused by MySQL 8);
+- optional dates (`explanation_date`, `transmit_date`, `return_date`,
+  resignation dates) are checked `Y-m-d` (vueportal: SQL error);
+- a record id that doesn't exist on file download / delete answers 404
+  (vueportal: a PHP error as `{ error }`).
+
+**Phase 2d — Work Schedule tab, Acknowledgment Reports, Branch Manpower,
+Workforce Dashboard: BUILT 2026-11-13.**
+- `employee_master_data/work_schedule/index|store|update/{id}|delete|import|template/download`
+  (rules: 2a's `WorkScheduleRules`; import in its three layouts; template =
+  text sheet + Shifts reference sheet).
+- `employee_master_data/acknowledgment_reports` (+ `store|view|export|delete`);
+  new tables `employee_acknowledgment_reports` / `_items` (copied: 2 / 37).
+- `employee_master_data/branch_manpower/options|report|export` (service
+  ported as is; R-5 + Detailed sheets). Area Assignment's tables `areas`,
+  `area_branches`, `area_hr_heads` migrated and copied (4 / 68 / 1) for it
+  — the Area module itself stays phase 3.
+- `employee_dashboard/summary` (Workforce Dashboard, `hr-payroll-dashboard`).
+90 tests. Contract check on real data: Branch Manpower options + 4 reports
+(per area / branch / HR head, 17 positions, 90 branches) and every
+validation answer SAME; Work Schedule list and validations SAME;
+Acknowledgment index / view (both reports) SAME; Workforce Dashboard: every
+value identical under 5 filter sets — only the order among equal values in
+its ranked lists differs (vueportal's PHP 7 sort isn't stable; hris-api keeps
+insertion order), and Laravel 13's validation wording.
+Deliberate differences / fixes:
+- **Acknowledgment view / export / delete follow the branch rule** (own
+  branch unless `employee-acknowledgment-reports-all`; vueportal checked it
+  on store only — any report id could be read, exported or deleted);
+  another branch's report answers as not found; `is_active` is required per
+  employee (vueportal: PHP error when missing); store is one transaction;
+- Workforce Dashboard: Carbon 3 (Laravel 13) returns signed fractional
+  diffs — every age / tenure / day count is the whole absolute value, as
+  vueportal's Carbon 2 (found by the contract check: `avg_age` 34.4 vs 34).
+
+**Phase 2 is complete.** `users.employee_id`'s foreign key (ON DELETE SET
+NULL, as vueportal) was already added by 2a's migration; a test now covers
+it (deleting an employee keeps the account, unlinked). `EmployeeDirectory`
+(the user screens' light employee read) stays — it avoids the employee
+model's per-row manager queries. Not here, by plan: `attendance*` (phase 6),
+`new_hired` / `sync/new_hired` (phase 4).
+
+**Phase 3 — Org-adjacent: BUILT 2026-11-14.** 101 tests.
+- **Area Assignment** `area/index|create|store|edit/{id}|update/{id}|delete/{id}|assign_employee`
+  (a branch in one area; HR heads per employee, replace-all, active only).
+- **Holiday Calendar** `holiday_calendar/index|store|update/{id}|delete`
+  (one row per branch; branch changes on the audit trail, log Attendance).
+  Copied 21 holidays / 1,890 branch rows. Not ported: `edit`, `import`,
+  `template/download` (no working method in vueportal; React doesn't call them).
+- **Hiring Officers** `hiring_officer/index|create|store|update/{id}|delete/{id}`
+  (eligible: active ADMINISTRATION manager / Top Management / Branch
+  Manager). vueportal has none yet; the picker (68 employees) compared.
+- **Company Asset** `company_asset/*` (14 routes) + `my_asset/index`
+  (asset tags `AST-<year>-<6>` from MAX(), assignment history, return,
+  disposal lock, maintenance log, straight-line `book_value`). vueportal has
+  8 categories and no assets yet — behaviour rests on the tests
+  (`CompanyAssetTest`, incl. the delete-then-recreate tag pass).
+Contract check: every list / form-options / validation / not-found answer
+SAME, apart from Laravel 13's validation wording, vueportal's debug trace
+on a 404, and the order among equal last names in
+`company_asset/employee_options` (same 14 people).
+Deliberate differences / fixes:
+- **`company_asset/update` needs `company-asset-edit`** (vueportal's
+  middleware shared edit's rule, so `company-asset-list` alone could edit);
+- `book_value`: whole months, as vueportal's Carbon 2 (Carbon 3 returns a
+  fraction);
+- the seeders add `careers-update-status` / `careers-update-hiring-details`
+  (the hiring officer list's other permissions; the careers module is phase 4).
+**Training library** (`training/files|user_files|file/*`): not ported —
+only vueportal's own Vue pages use it; React has no screen for it.
+**Decision for the user:** port it anyway, or drop it from the plan.
+
+**Phase 4a — Recruitment gateway: BUILT 2026-11-18.** 117 tests (`RecruitmentTest`, 17).
+- `recruitment/*` (26 routes): the eight stage lists (+ this HRIS's
+  `branch_companies`), status count, view applicant, secondary details,
+  update status / hiring details, delete applicant, applicant files
+  (list / upload / download / delete), SMS / email, the six ATS exports,
+  the portal's setup (`setup/{branch|position|rank|job_vacancy}/{action}/{id?}`,
+  `careers-<resource>-<list|create|edit|delete>` checked per action; branch /
+  position lists also open to the job vacancy form), referral-code sync,
+  vacancies (+ export), total active employees. `CareersGateway`:
+  vueportal's — cached service-account token renewed once on a 401,
+  `user_email` + `scope` (`branch` for a non-Administrator Branch Manager),
+  accepted changes on the Audit Trail (log Recruitment, `Careers\*`).
+- `employee_master_data/new_hired` + `sync/new_hired` (`NewHireSyncService`:
+  a Probationary employee `careers-<applicant id>` unless the same name /
+  birth date / gender exists, referral code, "Hired" branch assignment row,
+  sync log). Table `employee_new_hired_sync_logs` migrated + copied (1,842).
+- `activity_logs/careers_audit_trail` now reads the portal's trail.
+- Bell: the Recruitment group (`RecruitmentNotifications`, first source in
+  `NotificationService::SOURCES`): hired applicants to sync + the per-stage
+  "due" counts; left out when the portal can't be reached.
+- Tests never reach a real outside service (`Http::preventStrayRequests()`
+  in `ApiTestCase`).
+Contract check on real data (local portal): every list, view, secondary
+details, file list, setup list, validation and not-found answer SAME
+(26 calls); `employee_master_data/new_hired` and `careers_audit_trail`
+(3 calls) SAME; vacancies identical as a set (716 rows; the order among
+the same position is arbitrary in both); bell Recruitment items identical
+(new_hired 596, initial interview 5, final interview 1, orientation 2). Live
+round trip through hris-api: careers rank created and deleted, both on the
+Audit Trail with user and record id.
+Deliberate differences / fixes:
+- **sync refuses an applicant without a birth date or contract signing
+  date** (422, names them, nothing synced) — vueportal wrote `0000-00-00`,
+  which only its non-strict connection accepted; NOT NULL text columns the
+  portal leaves empty (`school_attended`, …) are written `''` as vueportal
+  stored them;
+- `new_hired` with the portal unreachable answers an empty list
+  (vueportal: a PHP error);
+- `recruitment/new_hired` keeps vueportal's `careers-new-hired`, which no
+  seeder creates — Administrator only, as before (React uses
+  `employee_master_data/new_hired`);
+- not ported: `get_vacancy_duration_details` (compared a position name to
+  an id, hard-coded branch AGOO; nothing calls it).
+**Note:** the bell had no sources before this — phases 2–3's items
+(open NTE / disciplinary, regularization, referral codes …) were not
+registered when those modules were ported — still to add (open item).
+
+**Phase 4b — Manpower Request (MRF): BUILT 2026-11-18.** 129 tests (`ManpowerRequestTest`, 12).
+`manpower_request/*` (18 routes, POST only): index / create / store / edit /
+update / submit / approve / reject / return / cancel / delete /
+approval_history / record_hire / line attachment upload · download · delete
+/ hiring + status Excel reports. `ManpowerRequestService` is vueportal's rule
+for rule (its own flow on the shared tables — one Access Chart per type
+`MRF - Replacement | Additional | New Position`, levels read live; level 1
+of Additional / New Position by `position_subs` hierarchy; level-1
+auto-approval on submit; Returned resumes its level, Disapproved restarts;
+the Administrator completes any level alone; MAX()-locked `MRF-<year>-<6>`).
+Tables `manpower_requests`, `_details`, `_detail_hires` migrated + copied
+(7 / 8 / 0). Approvals inbox tab `mrf` (first `InboxSource`) and the bell's
+`mrf_approval` (For approval) + `mrf_overdue` (Recommended, time to fill
+RF 25 / SUP 45 / MGR 60).
+Contract check on real data: index, create, every MRF's edit +
+approval_history (7 each), not-found and every validation answer SAME —
+apart from `last_login` (users signed in after the copy) and Laravel 13's
+wording on `gte`; bell MRF items (1 / 2) and the inbox `mrf` tab identical.
+Live round trip on hris-api: draft created (`MRF-2026-000008`, headcount
+snapshot), opened, submit refused for the missing attachment, deleted.
+Deliberate differences / fixes:
+- **`approval_history/{id}` and `detail/file_download` follow the MRF's
+  visibility rule** (404 as `edit`) — vueportal answered any MRF id / any
+  line's file to anyone with `manpower-request-list`;
+- **line attachment upload / delete: requestor or Administrator only** (as
+  `update`) — vueportal let any `-create` / `-edit` holder change another
+  requestor's attachment;
+- `cancel` re-reads the status under a row lock.
+**Local data note:** the three `MRF - *` charts have no levels or approvers
+in either local database, so a new MRF can't be submitted there ("…approval
+procedure has no levels configured.") — set them up on the Access Chart
+screen before testing in the browser; check production has them.
+**Bell / inbox note:** MRF and Recruitment are the only sources so far
+(see 4a's note).
+
+**Phase 5 — KPI Management: BUILT 2026-11-18.** 139 tests (`KpiTest`, 10).
+`kpi/*` (32 routes, REST verbs as vueportal): settings, behavior criteria,
+templates (+ single items, computation-class list), evaluations (create /
+bulk from the position's active template with weights and caps frozen;
+grade, submit, approver ratings, approve / reject / resubmit, revert —
+Administrator only —, delete draft, auto-compute), the employee picker,
+My Evaluations (+ self-evaluate), reports (consolidated, employee history,
+summary). Visibility: vueportal's `KpiEvaluation::visibleTo` (subordinates
+in the user's branch — head office every branch — + own; list-all /
+template-edit all). Scoring `KpiCalculationService` as is. Auto-grades:
+`KpiComputation/` copied (AccountAnalyst + V2, `resources/sql/kpi/IRDetailed.sql`),
+the engine as vueportal's (all or nothing). Tables: the 9 `kpi_*` (copied:
+1 template / 5 items, 4 evaluations / 16 items / 20 ratings, 5 criteria, 2
+settings) and, read-only for the auto-grades, `sap_databases` /
+`sap_db_branches` (101 / 168, passwords as vueportal encrypted them). Bell
+`kpi_approval` + inbox tab `kpi`.
+Contract check on real data: settings, criteria, templates, computation
+classes, every evaluation (list, filters, 4 details), My Evaluations, the
+three reports and every validation / workflow refusal SAME (65 calls);
+differences only users' `last_login` / `updated_at` (signed in after the
+copy), vueportal's debug trace on a 404, Laravel 13's wording of the
+settings validation `message`, and the employee picker's order among equal
+last names (597 / 41 rows identical as sets). Bell `kpi_approval` (2) and
+the inbox `kpi` tab identical. Live round trip on hris-api: created for the
+Web Developer template, graded, submitted (80.00 = 76 + 4), reverted,
+deleted (rows cascaded).
+Deliberate differences / fixes:
+- **`reports/employee/{id}` and `reports/summary` follow the visibility
+  rule** (vueportal: anyone with `kpi-evaluation-list` read every
+  employee's KPI history; React doesn't call them);
+- bulk create: an unexpected failure is skipped as "Could not create the
+  evaluation. Please try again." (vueportal put the exception text — SQL —
+  in `reason`); template store / update, grade saves, revert, compute's
+  writes and self-evaluate run in one transaction;
+- self-evaluate without `items` / `behavior_ratings` saves nothing
+  (vueportal: a PHP error).
+**Production config for compute:** `CNC_MSSQL_*` (as vueportal's) and
+`LEGACY_APP_KEY` = vueportal's `APP_KEY` (decrypts the copied SAP
+passwords; without it only the V1 classes connect, V2 says "the saved
+password … could not be read"). Re-run `hris:copy-legacy --table=sap_databases`
+after a password changes in vueportal. **Not verified live:** SAP
+(192.168.1.25) isn't reachable from this device — compute is covered by the
+tests (Attendance class, the V2 / missing-class errors, the decryption).
+
+**Phase 6 — Time & Leave, split (in dependency order):** 6a shifts /
+shifting / default schedules (+ `ScheduleService`) — done; **6b next:**
+biometric devices (+ `ZkTecoClient`, listener, pull / copy jobs —
+scheduled only behind an env flag, off until cut-over, so hris-api and
+vueportal never pull the same device), `BiometricLogService`, BioBridge copy,
+attendance log import, EMD `attendance` / `attendance/export` /
+`attendance/report` (`getAttendanceLogs`), and the read-only
+`payroll_runs` / `payroll_run_employees` copy (attendance import's locked
+dates, the filings' paid lock); 6c leave, manual time entries, overtime and
+My Filing together (they check each other; payroll pieces they need:
+`markPaid` / `assertNotLocked` / `assertFilingOpen` / `dayType`); 6d DTR,
+My Attendance. Traps found while reading 6b: Carbon 3's signed
+`diffInMinutes` / `diffInDays` (AttendanceLogService::timesOf's 24-hour
+check, BioBridgeCopyService's 31-day check — use absolute values).
+
+**Phase 6a — Shifts, shifting, default schedules: BUILT 2026-11-18.** 144 tests (`ShiftingTest`, 5).
+`shift/*` (pattern CRUD; a used shift keeps its pattern / grace / make-up /
+flexible hours and can't be deleted; audit 'Attendance' with the days),
+`shift_assignment/*` (10 routes: shifting with revisions, direct-subordinate
+scope, preview, bulk all-or-nothing, history), `group_schedule/*` (6 routes:
+default schedules / group shifting per company / branch / position, reach
+preview). `ScheduleService` + `GroupScheduleService` as vueportal's (the
+schedule in force: own shifting → group shifting → Work Schedule → group
+default → none). Tables `employee_shift_assignments` (+ `_revisions`),
+`group_schedules` and — read by the shifting form's cut-off picker, owned by
+the Payroll phase — `payroll_cutoffs` migrated + copied (1 / 1 / 0 / 24).
+Contract check on real data: 36 calls (lists, filters, options, history,
+three schedule previews incl. over-31-days / self-relieve / over-a-year,
+candidates, bulk preview / store refusal, default-schedule previews and
+every validation / not-found answer) SAME. No live write round trip
+(shiftings and defaults are never deleted — the tests cover the writes).
+Found by the check (hris-api's own, fixed before commit): a
+`Collection::each()` arrow callback returning `false` stopped the loop
+(`assigned` / `scope_name` missing after the first unused row) — earlier
+phases' `each(fn …)` uses checked, none return false.
+
+**Next phases, in order** (each: migrations from the live schema, copy
+tables, permission seeder, tests, contract check, then this section):
+2. ~~**Employee Master Data**~~ — done (2a–2d above).
+3. ~~**Org-adjacent**~~ — done (Training library: decision pending, above).
+4. ~~**Recruitment gateway + Manpower Request (MRF)**~~ — done (4a, 4b above).
+5. ~~**KPI Management**~~ — done (above).
+6. **Time & Leave** — leave types / leave / balances, shifts, work schedules,
+   shift assignment / group schedules, manual time entries, overtime,
+   biometric devices + `biometric:*` commands and the scheduler, DTR, My
+   Filing, My Attendance.
+7. **Payroll** — settings + assignments, employers, banks / bank accounts,
+   compensation, allowances, contributions + tables, deductions, adjustments,
+   cut-offs, payroll runs, 13th month, reports & compliance, payslips, Payroll
+   Assistant (+ topics seeder).
+8. **Separation** — Clearance (+ setup), offboarding links, final pay.
+9. **Cut-over** — full contract check, React `VITE_API_BASE_URL` → hris-api,
+   browser test pass, production compose / deploy plan, vueportal HRIS
+   routes retired (decision for the user then).
+
+**Repo:** GitHub `xavierder13/hris-api`, branch `master` (pushed 2026-11-13).
+**Open:** production deploy target.
+
 ## Pick up here — left to do (saved 2026-10-11)
 
 Everything built so far is pushed (vueportal `333fdc1` on `F-HRIS-Staging`,

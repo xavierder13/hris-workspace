@@ -8,7 +8,8 @@
     { "name": "hris-workspace", "path": "." },
     { "name": "vueportal (Laravel backend)", "path": "vueportal" },
     { "name": "reactjs-ant-design (React HRIS frontend)", "path": "reactjs-ant-design" },
-    { "name": "recruitment-portal (Laravel careers portal)", "path": "recruitment-portal" }
+    { "name": "recruitment-portal (Laravel careers portal)", "path": "recruitment-portal" },
+    { "name": "hris-api (Laravel 13 HRIS backend, port in progress)", "path": "hris-api" }
   ],
   "settings": {
     // The repos already appear as their own roots — don't list them twice
@@ -17,7 +18,8 @@
     "files.exclude": {
       "vueportal": true,
       "reactjs-ant-design": true,
-      "recruitment-portal": true
+      "recruitment-portal": true,
+      "hris-api": true
     },
     // Keep Ctrl+P and search to source code
     "search.exclude": {

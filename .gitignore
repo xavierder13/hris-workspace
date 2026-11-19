@@ -17,6 +17,7 @@
 /vueportal/
 /reactjs-ant-design/
 /recruitment-portal/
+/hris-api/
 
 # --- Test results are ephemeral, environment-specific output ---
 /test-results/*
