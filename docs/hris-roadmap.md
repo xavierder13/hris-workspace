@@ -681,14 +681,9 @@ after a password changes in vueportal. **Not verified live:** SAP
 tests (Attendance class, the V2 / missing-class errors, the decryption).
 
 **Phase 6 — Time & Leave, split (in dependency order):** 6a shifts /
-shifting / default schedules (+ `ScheduleService`) — done; **6b next:**
-biometric devices (+ `ZkTecoClient`, listener, pull / copy jobs —
-scheduled only behind an env flag, off until cut-over, so hris-api and
-vueportal never pull the same device), `BiometricLogService`, BioBridge copy,
-attendance log import, EMD `attendance` / `attendance/export` /
-`attendance/report` (`getAttendanceLogs`), and the read-only
-`payroll_runs` / `payroll_run_employees` copy (attendance import's locked
-dates, the filings' paid lock); 6c leave, manual time entries, overtime and
+shifting / default schedules (+ `ScheduleService`) — done; 6b biometric
+devices, BioBridge copy, attendance log import, EMD attendance — done;
+**6c next:** leave, manual time entries, overtime and
 My Filing together (they check each other; payroll pieces they need:
 `markPaid` / `assertNotLocked` / `assertFilingOpen` / `dayType`); 6d DTR,
 My Attendance. Traps found while reading 6b: Carbon 3's signed
@@ -715,6 +710,62 @@ Found by the check (hris-api's own, fixed before commit): a
 `Collection::each()` arrow callback returning `false` stopped the loop
 (`assigned` / `scope_name` missing after the first unused row) — earlier
 phases' `each(fn …)` uses checked, none return false.
+
+**Phase 6b — Biometric devices, BioBridge feed, attendance log import, EMD attendance: BUILT 2026-11-19.** 166 tests (`BiometricTest` 13, `AttendanceTest` 6, `Unit\ZkTecoClientTest` 3).
+- `biometric_device/*` (12 routes): devices CRUD (comm key hidden, blank on
+  edit keeps it, a device with punches can't be deleted), Pull now / Pull all
+  (a background `biometric:pull-devices` round, 8 at a time), logs (paged,
+  name search), feeds (the two feeds' state), `feeds/update` (Administrator
+  only — `role:Administrator`), Copy now, Fetch from BioBridge (≤ 31 days),
+  Import devices from BioBridge.
+- `Services/Biometrics/`: `ZkTecoClient` (vueportal's, read-only command
+  whitelist) behind `ZkTecoConnector` (the tests' seam), `BiometricDeviceService`,
+  `BiometricListenerService`, `BioBridgeCopyService`, `BiometricLogService`
+  (biometric_device_logs from 2026-01-01 once the first full copy finished,
+  BioBridge before / until then). Commands `biometric:listen | pull-device |
+  pull-devices | copy-biobridge`; the pull / copy are **scheduled only with
+  `BIOMETRIC_SCHEDULE_ENABLED=true`** (off until cut-over: a device takes one
+  connection, vueportal pulls them now). The listener isn't scheduled — its
+  own `flock -n` cron job, as vueportal's.
+- `attendance_log/template/download | import` (`AttendanceLogService`:
+  night-shift next day, 24-hour line, replace / clear a day, locked dates of
+  Approved / Pending payroll runs, one audit entry per file).
+- `employee_master_data/attendance | attendance/export | attendance/report`
+  (`EmployeeAttendanceController`, vueportal's `getAttendanceLogs` day rule).
+- Tables migrated + copied: `biometric_devices`, `biometric_device_logs`,
+  `biometric_feed_settings`, `attendance_logs` (all 0 locally) and, read-only
+  for the Payroll phase, `payroll_runs` / `payroll_run_employees` (10 / 18).
+- **Docker image: `pdo_sqlsrv` added** (Microsoft ODBC 18 on Debian 13 +
+  the legacy-TLS openssl config, as vueportal's image) — hris-api had no SQL
+  Server driver, so neither BioBridge nor KPI's SAP compute could have
+  connected. Rebuild the image on every device / in production.
+Contract check (user 1): 17 calls — devices list, feeds, every not-found,
+validation and refusal answer, both template errors, import empty, report,
+attendance — SAME, apart from Laravel 13's validation wording on `port`.
+Full run (311 calls) unchanged otherwise: 230 SAME / 67 KEYS-OK / 14 DIFF,
+all differences already recorded above. Locally vueportal has no devices,
+punches or BioBridge connection, so the attendance answers compared are the
+error paths (both 500 "Unable to retrieve…"); the data paths rest on the
+tests (fake device + BioBridge tables on the test connection). Live round
+trip on hris-api: device created, Pull now on an unreachable address →
+Failed / 422 / BioBridge fallback, logs, delete — on the Audit Trail.
+Deliberate differences / fixes:
+- **EMD attendance / export / report follow the Employee Master Data scope**
+  (`EmployeeQuery::scope`) — vueportal answered any employee code to anyone
+  holding the permission; an employee outside the scope has no punches
+  (empty list, same shape);
+- the report's and the import's unexpected errors don't echo the exception
+  (vueportal returned the SQL / PHP message as `error`);
+- Carbon 3: the 24-hour line check, the 31-day fetch / template checks use
+  absolute values.
+Not ported: EMD export type `Employee Attendance Report` (vueportal's
+returns hard-coded sample data — Xavier De Guzman, fixed times; stays 422
+"not available yet").
+**Production config:** `BIOBRIDGE_DB_*` (as vueportal's); at cut-over turn
+vueportal's biometric schedule / listener off and `BIOMETRIC_SCHEDULE_ENABLED`
++ the listener cron on here. **Not verified live:** no ZKTeco device or
+BioBridge is reachable from this device — the client is tested against a
+scripted fake device (frames, 40-byte records, read-only guard).
 
 **Next phases, in order** (each: migrations from the live schema, copy
 tables, permission seeder, tests, contract check, then this section):
