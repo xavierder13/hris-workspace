@@ -315,8 +315,8 @@ Module rules live in each repo's skills:
    permission is held only by Administrator, Employee Master Data
    Administrator and HRIS Administrator — grant it to any other role
    (e.g. Recruitment & Hiring, Payroll Admin) that should pick a branch.
-21. **Careers portal certificate fix — URGENT, Recruitment is down on
-   production** (pushed 2026-11-19: vueportal `master` `1c6581f`, same fix on `F-HRIS-Staging` `fde10cb`). Fixes "Connection
+21. **Careers portal certificate fix — DEPLOYED and verified on production
+   2026-11-19 (Recruitment pages load again)** (pushed 2026-11-19: vueportal `master` `1c6581f`, same fix on `F-HRIS-Staging` `fde10cb`). Fixes "Connection
    refused for URI https://recruitment.addessa.com/…": the portal's new
    certificate (2026-11-15) isn't trusted by the server's old CA store, so
    vueportal now ships `resources/certs/cacert.pem`. Deploy: pull, then
