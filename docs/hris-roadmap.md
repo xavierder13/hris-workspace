@@ -111,6 +111,12 @@ Before production:
 - Tell payroll: migration `2026_10_15_110000` gives existing settings a
   30-min OT minimum / 15-min rounding (changes OT pay after deploy).
 
+Table column drag / reorder + Columns chooser (`useTableColumns`, React only, localStorage; 2026-11-25,
+React `a14f1d9` / `cb09e27`, pushed): on the main list pages and the employee lists — browser-test header drag + refresh.
+
+My Attendance date range (vueportal `MyAttendanceController@show` `date_from`/`date_to`, ≤ 93 days, `c965708` + React
+Per cut-off / Date range switch `b7c305d`; 2026-11-25): controller checked in tinker; browser-test it. Port to hris-api.
+
 To fix / build (not scheduled):
 - LOW: the pending-filings bell count isn't user-scoped; imports have no file
   type / size / row cap.
