@@ -25,9 +25,9 @@ commit and the files below) and delete what is no longer open.
   built (175 tests), each contract-checked against vueportal. **Next: 6d —
   DTR, My Attendance.** Then 7 Payroll, 8 Separation, 9 Cut-over (list below).
 - Repos (check before relying on it): GitHub `xavierder13/hris-api`
-  `master`; recruitment-portal `master` has local commits / an uncommitted
-  `docker-compose.yml` change / a stash that are the user's — ask before
-  pushing or cleaning.
+  `master`; recruitment-portal `master` has an uncommitted
+  `docker-compose.yml` change and vueportal an uncommitted `app/User.php`
+  `guard_name` change, both the user's — ask before committing or cleaning.
 
 ## hris-api port
 
@@ -121,13 +121,15 @@ HRIS user pickers = employees (linked users) + Administrators (`User::employeeOr
 Approving Officers via `access_chart/index?employees_only`; vueportal `e6cb7de`, React `7ca4c5e`; 2026-11-25): tinker-checked;
 21 of 29 current approving officers aren't linked — HR to link them. Audit Trail user filter left on every user. Port to hris-api.
 
-New recruitment process (2026-11-25, all committed locally, **not pushed**; deploy steps in `docs/vueportal-deploy-steps.md` "New recruitment process"):
+New recruitment process (2026-11-25, pushed; deploy steps in `docs/vueportal-deploy-steps.md` "New recruitment process"):
 Failed remarks required per stage (portal `9e9abaf`, React `2552163`); referral lists Export (React `c38165d`);
 Company Asset type (vueportal `301a0ec`, React `be768ad`); mass upload of approved (Open) MRFs (vueportal `bc42a96`,
 React `edcd22d`); online examination — sample MPQ / MDQ, expiring links (hours / days setting), new repo
-`recruitment-exam/` (`e5ccc1b`, no remote yet), portal `61fa334`, vueportal `ef454c6`, React `b3f7163`.
-Migrations not run locally (blocked here — user to run), so none of it is live-tested beyond tinker (gateway rules,
-MRF import in a rolled-back transaction, exam scoring); browser-test all five after migrating. Exam questions are
+`recruitment-exam/` (GitHub `xavierder13/recruitment-exam`), portal `61fa334`, vueportal `ef454c6`, React `b3f7163`.
+Local DB migrated and OnlineExamSeeder run (2026-11-25); not yet browser-tested end to end. Fixed after: Update Status
+locked steps 2–5 for everyone (React `42a6159`), portal emails sent from "apikey" (portal `2bd14bb`; the local SendGrid
+key is rejected — new key + verified sender needed before mail can be tested). TEST applicants 31903–31908 (one per
+stage, user's email / mobile) are in the local careers DB — delete when done. Exam questions are
 edited in `OnlineExamSeeder` only (no editor UI); SMS for exam links not built. Port to hris-api.
 
 To fix / build (not scheduled):
