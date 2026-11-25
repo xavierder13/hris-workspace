@@ -117,6 +117,10 @@ React `a14f1d9` / `cb09e27`, pushed): on the main list pages and the employee li
 My Attendance date range (vueportal `MyAttendanceController@show` `date_from`/`date_to`, ≤ 93 days, `c965708` + React
 Per cut-off / Date range switch `b7c305d`; 2026-11-25): controller checked in tinker; browser-test it. Port to hris-api.
 
+HRIS user pickers = employees (linked users) + Administrators (`User::employeeOrAdministrator()`; clearance in-charges,
+Approving Officers via `access_chart/index?employees_only`; vueportal `e6cb7de`, React `7ca4c5e`; 2026-11-25): tinker-checked;
+21 of 29 current approving officers aren't linked — HR to link them. Audit Trail user filter left on every user. Port to hris-api.
+
 To fix / build (not scheduled):
 - LOW: the pending-filings bell count isn't user-scoped; imports have no file
   type / size / row cap.
