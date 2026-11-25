@@ -427,3 +427,16 @@ Assigned Settings → "Night diff. from / to"; must cover 10 PM – 6 AM.
 3. vueportal code.
 
 HRIS Branch Managers still need a portal Branch Manager account with the same email (1 of 74 locally lacks one).
+
+## New recruitment process (2026-11-25)
+
+Order: careers portal first, then vueportal, then React, then the exam app.
+
+1. **recruitment-portal**: deploy `9e9abaf` + `61fa334`; `php artisan migrate --path=database/migrations/2026_11_25_100000_add_failed_remarks_to_applicants_table.php`
+   and `--path=database/migrations/2026_11_25_110000_create_online_exam_tables.php`; `composer dump-autoload`;
+   `php artisan db:seed --class=OnlineExamSeeder`; `.env` `EXAM_APP_URL=https://exam.<domain>`; `php artisan config:clear`.
+2. **vueportal**: deploy `301a0ec`, `bc42a96`, `ef454c6`; `php artisan migrate --path=database/migrations/new/2026_11_25_100000_add_asset_type_to_company_assets_table.php`;
+   `php artisan db:seed --class=PermissionSeeder`; `php artisan db:seed --class=ManpowerRequestRoleSeeder`.
+   Grant `careers-online-exam-send` / `-results` / `-settings` to the recruitment roles (Administrator has them).
+3. **React**: deploy (`2552163` … `b3f7163`).
+4. **recruitment-exam** → SiteGround subdomain: build with the production `VITE_API_BASE_URL`, upload `dist/` (with `.htaccess`), SSL — its README.
